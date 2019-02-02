@@ -1,0 +1,75 @@
+<basegameConfigs>
+	
+	<!-- Config file for realManualTransmission configs for basegame vehicles (Note, this only works for basegame vehicles! Not Mods) -->
+	<!-- identification via XML name -->
+
+	<realManualTransmission configFile="ASeries.xml" >
+        <gears>
+            <gear speed="8.1" name="1" />
+            <gear speed="11.2" name="2" />
+            <gear speed="15.4" name="3" />
+            <gear speed="21.4" name="4" />
+            <gear speed="29.8" name="5" />
+            <gear speed="40.5" name="6" />
+        </gears>
+		
+     	<reverser type="normal" > 
+			<ratios forward="1" reverse="1" />
+			<settings brakeAggressionBias="1" clutchTime="1200" />
+		</reverser>	   
+        
+        <rangeSet1 powerShift="false" defaultRange="1" >
+            <range ratio="1" name="B" />
+            <range ratio="0.244" name="A" />
+        </rangeSet1>
+            
+        <rangeSet2 powerShift="false" defaultRange="1" >
+            <range ratio="1" name="" />
+            <range ratio="0.0659" name="K" />
+        </rangeSet2>
+        
+    </realManualTransmission>
+	
+	<realManualTransmission configFile="series6M.xml" >
+        <gears>
+            <gear speed="4.4"  name="A" />
+            <gear speed="9.4"  name="B" />
+            <gear speed="15.0" name="C" />
+            <gear speed="33.4" name="D" />
+            <gear speed="50.0" name="E" />
+        </gears>
+		
+     	<reverser type="normal" > 
+			<ratios forward="1" reverse="1" />
+			<settings brakeAggressionBias="0.3" clutchTime="750" />
+		</reverser>	   
+        
+        <rangeSet1 powerShift="true" defaultRange="1" >
+            <range ratio="0.549" name="1" />
+            <range ratio="0.716" name="2" />
+			<range ratio="0.86"  name="3" />
+            <range ratio="1"     name="4" />
+        </rangeSet1>
+    </realManualTransmission>	
+	
+	<realManualTransmission configFile="fiat1300dt.xml">
+	
+		<gears>
+			<gear speed="12.5" name="1" />
+			<gear speed="14.5" name="2" />
+			<gear speed="19" name="3" />
+			<gear speed="25" name="4" />
+		</gears>
+		
+		<rangeSet1 powerShift="false" defaultRange="2" >
+			<range ratio="0.7" name="R" isReverse="true" />
+			<range ratio="0.164" name="L" />
+			<range ratio="0.4" name="M" />
+			<range ratio="1" name="V" />
+		</rangeSet1>
+			
+	</realManualTransmission>	
+
+
+
+</basegameConfigs>

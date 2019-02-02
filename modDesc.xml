@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<modDesc descVersion="41">
+    <author>modelleicher (LS-Modcompany)</author>
+    <version>0.0.3.5</version>
+    <title>
+        <de>Real Manual Transmission</de>
+		<en>Real Manual Transmission</en>
+    </title>
+    <description>
+        <de>
+<![CDATA[Mod für manuelles Schaltgetriebe]]>
+        </de>
+	<en>
+<![CDATA[Manual transmission/gearbox mod]]>
+	</en>
+    </description>
+
+	<iconFilename>store.dds</iconFilename>
+	<l10n>
+		<text name="input_RMT_MOUSE_BUTTON"><de>RMT: Mausbutton</de><en>RMT: Mousebutton</en></text>
+		<text name="input_RMT_OPEN_MENU"><de>RMT: Menü öffnen</de><en>RMT: open menu</en></text>
+		<text name="input_RMT_HANDBRAKE"><de>RMT: Handbremse</de><en>RMT: handbrake</en></text>
+		<text name="input_RMT_FORWARD"><de>RMT: Reverser Vorwärts</de><en>RMT: reverser forward</en></text>
+		<text name="input_RMT_REVERSE"><de>RMT: Reverser Rückwärts</de><en>RMT: reverser reverse</en></text>
+		<text name="input_RMT_TOGGLE_REVERSER"><de>RMT: Reverser Umschalten</de><en>RMT: reverser toggle</en></text>
+		
+		<text name="input_RMT_HANDTHROTTLE_UP"><de>RMT: Handgas erhöhen</de><en>RMT: hand throttle up</en></text>
+		<text name="input_RMT_HANDTHROTTLE_DOWN"><de>RMT: Handgas verringern</de><en>RMT: hand throttle down</en></text>
+		<text name="input_RMT_HANDTHROTTLE_AXIS"><de>RMT: Handgas Analoge Achse</de><en>RMT: hand throttle axis</en></text>
+		
+		<text name="input_RMT_SHIFT_UP"><de>RMT: Gang hochschalten</de><en>RMT: gear shift up</en></text>
+		<text name="input_RMT_SHIFT_DOWN"><de>RMT: Gang runterschalten</de><en>RMT: gear shift down</en></text>
+
+		<text name="input_RMT_RANGE_UP1"><de>RMT: Gruppenset1 hochschalten</de><en>RMT: rangegroup1 shift up</en></text>
+		<text name="input_RMT_RANGE_DOWN1"><de>RMT: Gruppenset1 runterschalten</de><en>RMT: rangegroup1 shift down</en></text>
+		<text name="input_RMT_RANGE_UP2"><de>RMT: Gruppenset2 hochschalten</de><en>RMT: rangegroup2 shift up</en></text>
+		<text name="input_RMT_RANGE_DOWN2"><de>RMT: Gruppenset2 runterschalten</de><en>RMT: rangegroup2 shift down</en></text>
+		<text name="input_RMT_RANGE_UP3"><de>RMT: Gruppenset3 hochschalten</de><en>RMT: rangegroup3 shift up</en></text>
+		<text name="input_RMT_RANGE_DOWN3"><de>RMT: Gruppenset3 runterschalten</de><en>RMT: rangegroup3 shift down</en></text>
+		
+		<text name="input_RMT_AXIS_CLUTCH"><de>RMT: Kupplungsachse (analog)</de><en>RMT: clutch axis</en></text>
+		<text name="input_RMT_CLUTCH_BUTTON"><de>RMT: Kupplungstaste/Button</de><en>RMT: clutch key/button</en></text>
+		
+		<text name="input_RMT_NEUTRAL"><de>RMT: Leerlauf</de><en>RMT: neutral</en></text>
+		
+		<text name="input_RMT_SELECT_GEAR_1"><de>RMT: Gang-Direktwahl 1</de><en>RMT: gear 1</en></text>
+		<text name="input_RMT_SELECT_GEAR_2"><de>RMT: Gang-Direktwahl 2</de><en>RMT: gear 2</en></text>
+		<text name="input_RMT_SELECT_GEAR_3"><de>RMT: Gang-Direktwahl 3</de><en>RMT: gear 3</en></text>
+		<text name="input_RMT_SELECT_GEAR_4"><de>RMT: Gang-Direktwahl 4</de><en>RMT: gear 4</en></text>
+		<text name="input_RMT_SELECT_GEAR_5"><de>RMT: Gang-Direktwahl 5</de><en>RMT: gear 5</en></text>
+		<text name="input_RMT_SELECT_GEAR_6"><de>RMT: Gang-Direktwahl 6</de><en>RMT: gear 6</en></text>
+		<text name="input_RMT_SELECT_GEAR_7"><de>RMT: Gang-Direktwahl 7</de><en>RMT: gear 7</en></text>
+		<text name="input_RMT_SELECT_GEAR_8"><de>RMT: Gang-Direktwahl 8</de><en>RMT: gear 8</en></text>
+		
+		
+	</l10n>
+	
+    <multiplayer supported="true"/>
+    <extraSourceFiles>
+        <sourceFile filename="registerRMT.lua"/>
+        <sourceFile filename="rmtMenuMain.lua"/>
+    </extraSourceFiles>
+	
+	
+	<inputBinding>
+		<actionBinding action="RMT_MOUSE_BUTTON">
+			<binding device="KB_MOUSE_DEFAULT" input="MOUSE_BUTTON_LEFT" />
+		</actionBinding>
+		<actionBinding action="RMT_OPEN_MENU">
+			<binding device="KB_MOUSE_DEFAULT" input="KEY_m" />
+		</actionBinding>		
+		<actionBinding action="RMT_HANDBRAKE">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_FORWARD">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_REVERSE">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
+		<actionBinding action="RMT_TOGGLE_REVERSER">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+
+		<actionBinding action="RMT_HANDTHROTTLE_UP">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_HANDTHROTTLE_DOWN">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_HANDTHROTTLE_AXIS">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		
+		<actionBinding action="RMT_SHIFT_UP">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_SHIFT_DOWN">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_RANGE_UP1">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_RANGE_DOWN1">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_RANGE_UP2">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_RANGE_DOWN2">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_RANGE_UP3">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_RANGE_DOWN3">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+				
+		<actionBinding action="RMT_AXIS_CLUTCH">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
+		<actionBinding action="RMT_CLUTCH_BUTTON">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		
+		<actionBinding action="RMT_NEUTRAL">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
+
+		<actionBinding action="RMT_SELECT_GEAR_1">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_SELECT_GEAR_2">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_SELECT_GEAR_3">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
+		<actionBinding action="RMT_SELECT_GEAR_4">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_SELECT_GEAR_5">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_SELECT_GEAR_6">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_SELECT_GEAR_7">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+		<actionBinding action="RMT_SELECT_GEAR_8">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
+    </inputBinding>	
+	
+	<actions>
+		<action name="RMT_OPEN_MENU" />
+		<action name="RMT_MOUSE_BUTTON" />
+		
+		<action name="RMT_AXIS_CLUTCH" />
+		<action name="RMT_CLUTCH_BUTTON" />
+		
+		<action name="RMT_SHIFT_UP" />
+		<action name="RMT_SHIFT_DOWN" />
+		
+		<action name="RMT_RANGE_UP1" />
+		<action name="RMT_RANGE_DOWN1" />		
+		<action name="RMT_RANGE_UP2" />
+		<action name="RMT_RANGE_DOWN2" />
+		<action name="RMT_RANGE_UP3" />
+		<action name="RMT_RANGE_DOWN3" />
+		
+		<action name="RMT_FORWARD" />
+		<action name="RMT_REVERSE" />
+		<action name="RMT_TOGGLE_REVERSER" />
+		
+		<action name="RMT_HANDTHROTTLE_AXIS" />
+		<action name="RMT_HANDTHROTTLE_DOWN" />
+		<action name="RMT_HANDTHROTTLE_UP" />
+		
+		<action name="RMT_HANDBRAKE" />
+		
+		<action name="RMT_NEUTRAL" />
+		
+		<action name="RMT_SELECT_GEAR_1" />
+		<action name="RMT_SELECT_GEAR_2" />
+		<action name="RMT_SELECT_GEAR_3" />
+		<action name="RMT_SELECT_GEAR_4" />
+		<action name="RMT_SELECT_GEAR_5" />
+		<action name="RMT_SELECT_GEAR_6" />
+		<action name="RMT_SELECT_GEAR_7" />
+		<action name="RMT_SELECT_GEAR_8" />
+
+	</actions>
+	
+</modDesc>
