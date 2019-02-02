@@ -26,7 +26,7 @@ In order to use the transmission with a vehicle it has to have a transmission co
 
 
 # How do I add a transmission Config to a Mod?
-Start by looking at the sample mods and the basegameConfigs.xml. The transmission config starts with <realManualTransmission> and ends with </realManualTransmission> and all the possible options should be self explanatory if you your way around XML.
+Start by looking at the sample mods and the basegameConfigs.xml. The transmission config and all the possible options should be self explanatory if you know your way around XML.
 You can find more detailed explanation of what the different XML options are in the basegameConfigs.xml :)
 Just add the realManualTransmission part to the XML of your Mod and it will have the Transmission. Basically, its very similar to GearboxAddon, so if you have ever added a config to a vehicle in FS17 GearboxAddon, you won't have any issues.
 I will add a Tutorial on how to add transmission at a later date as right now there is still a lot up for change.
