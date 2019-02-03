@@ -1,9 +1,25 @@
 -- by modelleicher
 -- temporary end goal: working manual gearbox with clutch, possibly support for full powershift transmissions.
 -- start date: 08.01.2019
+-- release Beta on Github date: 03.02.2019
 
 -- Changelog:
 
+-- V 0.4.0.0 ###
+	-- change in version numbers, we're on Github now!
+	-- more smoothing of motorLoad 
+	-- changed how we check if engineBrake is in effect 
+	-- a few pieces of remaining unneeded code deleted 
+	-- let the bugreports roll in.. :( 
+-- V 0.0.3.9 ###
+	-- added smoothing via table and average values for motorload percentage since smoothing like Giants does it doesn't work if one value is 0
+-- V 0.0.3.8 ###
+	-- fixed all the stuff I broke when testing the last 2 versions.. 
+	-- different variable to calculate engine brake 
+-- V 0.0.3.7 ###
+	-- added clutch influence on max clutch torque and max acceleration altough this doesn't seem to do much. Seems to make the vel acc spike a little less when clutching slowly 
+-- V 0.0.3.6 ###
+	-- many versions.. one changelog. Nothing changed. Its all still stupid.. (trying to figure out the RPM and vel acceleration spike bug)
 -- V 0.0.3.5 ###
 	-- renamed everything realManualTransmission / RMT fully now
 	-- XML configs are now realManualTransmission instead of fakeBox
@@ -64,7 +80,7 @@
 		</rangeSet1>
 		
 		<rangeSet2 powerShift="false" defaultRange="2">
-			<range ratio="0.5" name="LO" disableGears="1 2 3"/>
+			<range ratio="0.5" name="LO" />
 			<range ratio="1" name="HI" />
 		</rangeSet2>
 		
@@ -182,8 +198,6 @@ function realManualTransmission.onRegisterActionEvents(self, isActiveForInput)
 		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_8, self, realManualTransmission.RMT_SELECT_GEAR_8, true, true, false, true, nil);		
 		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
 	end;
-	
-
 end;
 
 
@@ -348,7 +362,33 @@ function realManualTransmission:RMT_HANDTHROTTLE(actionName, inputValue)
 	end;
 end;
 
+-- using tables and average values to smooth stuff 
+-- this function adds/fills the initial table with a default value to the given depth 
+function realManualTransmission:addSmoothingTable(depth, default)
+	local smoothingTable = {}
+	for i = 1, depth do
+		smoothingTable[i] = default;
+	end;
+	return smoothingTable; -- return the defailt table 
+end;
 
+-- this function returns the average of the given table and optionally adds a new Value to it 
+function realManualTransmission:getSmoothingTableAverage(smoothingTable, addedValue)
+	if addedValue ~= nil then
+		for i = 2, #smoothingTable do -- shift over each value to the previous spot
+			smoothingTable[i-1] = smoothingTable[i];
+		end;
+		smoothingTable[#smoothingTable] = addedValue; -- add new value into last spot 
+	end;
+	local average = 0;
+	for i = 1, #smoothingTable do
+		average = average + smoothingTable[i];
+	end;
+	average = average / #smoothingTable;
+	return average;
+end;
+--
+--
 function realManualTransmission:onLoad(savegame)
 	print("onLoad loaded");
 	
@@ -360,6 +400,8 @@ function realManualTransmission:onLoad(savegame)
 	self.loadFromXML = realManualTransmission.loadFromXML;
 	self.processGearInputs = realManualTransmission.processGearInputs;
 	self.returnRpmNonClamped = realManualTransmission.returnRpmNonClamped;
+	self.addSmoothingTable = realManualTransmission.addSmoothingTable;
+	self.getSmoothingTableAverage = realManualTransmission.getSmoothingTableAverage;
 	
 	self.hasRMT = false;
 	
@@ -442,7 +484,8 @@ function realManualTransmission:onLoad(savegame)
 		print("MAX SPEED POSSIBLE: "..tostring(spec.maxSpeedPossible));
 		
 
-		
+		-- new smoothing tables 
+		spec.loadPercentageSmoothing = self:addSmoothingTable(30, 0);
 		
 		-- neutral variable 
 		spec.neutral = true;
@@ -455,7 +498,7 @@ function realManualTransmission:onLoad(savegame)
 		spec.maxLowBrakeForceScale = 0.60;
 		spec.wantedLowBrakeForceScale = 0;
 		
-		spec.engineBrakeBase = 0.52;
+		spec.engineBrakeBase = 0.35;
 		spec.engineBrakeModifier = 1;
 		spec.wantedEngineBrake = 0;
 		
@@ -1016,6 +1059,7 @@ function realManualTransmission:selectReverser(isForward, inputValue)
 end;
 function realManualTransmission:onUpdate(dt) 
 
+	-- debugs...
 	local firstTimeRun1 = false;
 	if not firstTimeRun1 then
 		--DebugUtil.printTableRecursively(self.spec_dashboard, "-" , 0, 3)
@@ -1061,73 +1105,80 @@ function realManualTransmission:onUpdate(dt)
 			-- motor load for sound 
 			local loadPercentage = self.spec_motorized.motor:getMotorAppliedTorque() / math.max( self.spec_motorized.motor:getMotorAvailableTorque(), 0.0001)
 
+			--print("external torque: "..tostring(self.spec_motorized.motor:getMotorExternalTorque()));
+			--print("applied torque: "..tostring(self.spec_motorized.motor:getMotorAppliedTorque()));
+			
+			-- we need the load percentage without PTO to calculate engine brake effect 
+			local loadPercentageNoPTO = (self.spec_motorized.motor:getMotorAppliedTorque()-self.spec_motorized.motor:getMotorExternalTorque()) / math.max( self.spec_motorized.motor:getMotorAvailableTorque(), 0.0001)
+			--print(loadPercentageNoPTO);
+			
 			if spec.clutchPercent < 0.6 or spec.neutral then
 				-- if clutch is pressed or neutral, load percentage is calculated using wanted and actual RPM 
 				if (rpm / motor.maxRpm) < mAxisForward then
-					spec.loadPercentage = math.min(spec.loadPercentage + 0.01*dt, 1);
+					loadPercentage = 1;
 				else
-					spec.loadPercentage = math.max(spec.loadPercentage - 0.002*dt, 0);
+					loadPercentage = 0;
 				end;
-			else		
-				if loadPercentage <= spec.loadPercentage then
-					spec.loadPercentage = math.max(spec.loadPercentage - 0.002*dt, 0);
-				elseif loadPercentage > spec.loadPercentage then
-					spec.loadPercentage = math.min(spec.loadPercentage + 0.002*dt, 1);
-				end;			
 			end;
 		
+			-- actual load percentage 
 			self.spec_motorized.actualLoadPercentage = loadPercentage
+			
+			-- smoothed load percentage 
+			local newAverage = self:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
+			self.spec_motorized.smoothedLoadPercentage = newAverage;			
 		
-			self.spec_motorized.smoothedLoadPercentage = spec.loadPercentage;
+			--self.spec_motorized.smoothedLoadPercentage = spec.loadPercentage;
 			
 			--self.spec_motorized.smoothedLoadPercentage = 0.8 * self.spec_motorized.smoothedLoadPercentage + 0.2 * spec.loadPercentage --0.5* self.spec_motorized.smoothedLoadPercentage + 0.5*loadPercentage
 			
-
+			
 			-- calculate engine brake 
-			local wantedEngineBrake =  (1 - (spec.currentWantedSpeed / (spec.maxSpeedPossible*1.1))) * spec.engineBrakeBase * spec.engineBrakeModifier * (rpm / motor.maxRpm) * ((spec.clutchPercent - 0.199)*1.25);
+			local wantedEngineBrake =  (1 - (spec.currentWantedSpeed / (spec.maxSpeedPossible*1.1))) * spec.engineBrakeBase * spec.engineBrakeModifier * ((rpm / motor.maxRpm)^2) * ((spec.clutchPercent - 0.199)*1.25);
+	
 
 			-- now find out if we are off-load and engine is in pushmode
 			local axisWantedRPM = 0;
 			local isLowBraking = false;
 			
-			--[[if mAxisForward == 0 then -- we know that we are off the gas, in this case deceleration is true  (also, smoothing of brakeForce)
-				isLowBraking = true;
-			else -- but there's also the case in which we are on the gas pedal but the engine RPM is higher than the wanted RPM 
-				axisWantedRPM = (motor.maxRpm - motor.minRpm) * mAxisForward + motor.minRpm;
-				if axisWantedRPM + 15 < rpm then -- more rpm than we want.. deceleration mode (have a 15 rpm buffer to not trigger all the time at full throttle and full speed) 
-					isLowBraking = true;
-				end;
-			end;
-			]]
-			
+			-- previously used accelerator pedal and wantedRPM vs. actual RPM do check if we are low braking.. Didn't work well.
 			-- try using motor load instead, if load is 0 we are in pushmode 
-			-- try smoothed version first 
-			if self.spec_motorized.smoothedLoadPercentage == 0 then 
+			-- tried smoothed motor load, didn't work after I changed to the new acceleration "model". Now we use actualLoadPercentage but we have a timer of 300ms so it only starts braking if we are without load for at least 300ms 
+			-- that way it doesn't get into a brake-accelerate-brake-accelerate loop at low loads 
+			if loadPercentageNoPTO == 0 then 
 				spec.isLowBrakingTimer = math.max(spec.isLowBrakingTimer - dt, 0);
 				if spec.isLowBrakingTimer == 0 then
 					isLowBraking = true;
 				end;
 			else
-				spec.isLowBrakingTimer = 100;
+				spec.isLowBrakingTimer = 255;
 			end;
 			
-			if spec.neutral or spec.clutchPercent < 0.2 then -- no brake force if we are in neutral.. 
+			-- since the delay is still too much using motorLoad, instant low braking when we are completely off the accelerator 
+			if mAxisForward <= 0.001 then
+				isLowBraking = true;
+			end;
+			
+			-- no brake force if we are in neutral or clutch is completely disengaged.. 
+			if spec.neutral or spec.clutchPercent < 0.2 then 
 				isLowBraking = false;
 			end;
+			
+			-- simple smoothing of low brakeforce so the changes are not as sudden 
 			if isLowBraking then
-				spec.wantedEngineBrake = (0.6 * spec.wantedEngineBrake ) + (0.4 * wantedEngineBrake);
+				spec.wantedEngineBrake = (0.1 * spec.wantedEngineBrake ) + (0.9 * wantedEngineBrake);
+				print("is low braking");
 			else
 				spec.wantedEngineBrake = math.max(0, spec.wantedEngineBrake - 0.1);
+				print("is not low braking");
 			end;
 			
-			
-			
+			-- debugs 
 			if spec.debug then
 				renderText(0.1, 0.5, 0.02, "axisWantedRPM: "..tostring(axisWantedRPM).." rpm "..tostring(rpm).." diff: "..tostring(rpm / axisWantedRPM).." gr: "..tostring(axisWantedRPM > rpm));
 			end;
 			
-
-			
+			-- ### 
 			-- now for the calculation of the actual gear ratio including the clutch calculation 
 			local actualGearRatio = 0;
 			local currentGearRatio = 0;
@@ -1149,7 +1200,7 @@ function realManualTransmission:onUpdate(dt)
 			
 			-- calculate theoretical gear ratio dependent on current RPM 
 			currentGearRatio = motor.lastMotorRpm / wheelSpeed;
-			--currentGearRatio = motor.lastRealMotorRpm / wheelSpeed;
+			--currentGearRatio = motor.lastRealMotorRpm / wheelSpeed; -- don't use real, use smoothed version instead 
 			
 			-- cap that gear ratio at 1000 
 			currentGearRatio = math.min(currentGearRatio, 1000);
@@ -1160,25 +1211,26 @@ function realManualTransmission:onUpdate(dt)
 			
 			if spec.clutchPercent < 0.999 then
 				-- calculate gear ratio based on clutch percentage between actual gear ratio and wanted gear ratio 
-				--actualGearRatio = math.max((spec.wantedGearRatio * ((spec.clutchPercent-0.2)*1.25)) + (spec.lastGearRatio * (1-(spec.clutchPercent-0.2)*1.25)), 0);
+				--actualGearRatio = math.max((spec.wantedGearRatio * ((spec.clutchPercent-0.2)*1.25)) + (spec.lastGearRatio * (1-(spec.clutchPercent-0.2)*1.25)), 0);  -- old version, buggy 
 				
 				--actualGearRatio = maxRatioPossible;
 				
-				local clutchPercent = math.max((spec.clutchPercent-0.2)*1.25, 0);
-				actualGearRatio = math.max(spec.wantedGearRatio * clutchPercent + spec.lastGearRatio * (1-clutchPercent), 0);
-				--actualGearRatio = spec.wantedGearRatio;
+				local clutchPercent = math.max((spec.clutchPercent-0.2)*1.25, 0); -- calculate clutchPercent in a way that < 0.2 clutch equals 0 
+				actualGearRatio = math.max(spec.wantedGearRatio * clutchPercent + spec.lastGearRatio * (1-clutchPercent), 0); -- now calculate gear ratio between clutch and actual 
 			else
 				-- if clutch is fully engaged just use wanted gear ratio 
 				actualGearRatio = spec.wantedGearRatio;
 			end;
 			
-			
+			-- no need to put it into a proper variable atm.. but since I've had to debug a lot around this stuff this is here.. and it stays for now 
 			spec.lastActualRatio = actualGearRatio;
-
+			
+			-- if we are in neutral of clutch all the way in we need to set gearRatio to 1 because giants physics do have some sort of enginebrake that I can not turn off so it is always low braking depending on gearRatio 
 			if spec.neutral or spec.clutchPercent < 0.2 then 
-				spec.lastActualRatio = 1; --spec.wantedGearRatio --1;
+				spec.lastActualRatio = 1; 
 			end;	
 			
+			-- debugs.. 
 			if spec.debug then
 				renderText(0.1, 0.6, 0.02, "actualGearRatio: "..tostring(actualGearRatio).." currentGearRatio: "..tostring(currentGearRatio).." wheelSpeed: "..tostring(wheelSpeed).." lastRealMotorRpm: "..tostring(motor.lastRealMotorRpm));
 			end;
@@ -1541,7 +1593,8 @@ function realManualTransmission:newMotorUpdate(dt)
 		
 		clampedMotorRpm = math.max(clampedMotorRpm, 500);
 		
-		vehicle.spec_realManualTransmission.lastRealRpm = (vehicle.spec_realManualTransmission.lastRealRpm * 0.3) + (clampedMotorRpm * 0.7);
+		-- stupid smoothing 
+		vehicle.spec_realManualTransmission.lastRealRpm = (vehicle.spec_realManualTransmission.lastRealRpm * 0.1) + (clampedMotorRpm * 0.9);
 		
 		-- end modelleicher 
 		--
@@ -1601,9 +1654,8 @@ function realManualTransmission.newUpdateWheelsPhysics(self, dt, currentSpeed, a
 			local wantedRpm = (motor.maxRpm - motor.minRpm) * acceleration + motor.minRpm;
 			
 			-- if our wantedRPM is higher than the currentRPM, increase acceleration, if its lower, decrease acceleration
-			-- increase/decrease is smoothed and dependent on difference between current rpm and wanted rpm 
 			if wantedRpm > motor.lastRealMotorRpm then
-				local difference = 1 - (motor.lastRealMotorRpm / wantedRpm);
+				--local difference = 1 - (motor.lastRealMotorRpm / wantedRpm);
 				newWantedAcceleration = 1;
 			else
 				newWantedAcceleration = 0;
@@ -1618,9 +1670,9 @@ function realManualTransmission.newUpdateWheelsPhysics(self, dt, currentSpeed, a
 		acceleration = spec.lastWantedAcceleration;
 		
 		-- if engine rpm falls below minRpm acceleration is 1
-		--if acceleration >= 0 and self.spec_motorized.motor.lastRealMotorRpm <= (self.spec_motorized.motor.minRpm +2) then
-		--	acceleration = 1;
-		--end;
+		if acceleration >= 0 and self.spec_motorized.motor.lastRealMotorRpm <= (self.spec_motorized.motor.minRpm +2) then
+			acceleration = 1;
+		end;
 				
 		-- if hand throttle is more than acceleration, use hand throttle value 
 		--acceleration = math.max(acceleration, self.spec_realManualTransmission.handThrottlePercent);

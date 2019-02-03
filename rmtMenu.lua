@@ -259,7 +259,7 @@ function rmtMenu:onDraw()
 				y = y + addY;
 			end;
 			if hud.showRpm then
-				renderText(x, y, 0.02, "RPM: "..tostring(math.floor(self.spec_motorized.motor.lastRealMotorRpm)));
+				renderText(x, y, 0.02, "RPM: "..tostring(math.floor(self.spec_motorized.motor.equalizedMotorRpm)));
 				y = y + addY;
 			end;
 			if hud.showLoad then

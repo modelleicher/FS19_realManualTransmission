@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="41">
+<modDesc descVersion="42">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.0.3.5</version>
+    <version>0.4.0.0</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -55,7 +55,7 @@
 		
 	</l10n>
 	
-    <multiplayer supported="true"/>
+    <multiplayer supported="false"/> <!-- NOT EVENTS YET, no synch yet -->
     <extraSourceFiles>
         <sourceFile filename="registerRMT.lua"/>
         <sourceFile filename="rmtMenuMain.lua"/>
