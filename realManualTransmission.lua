@@ -5,6 +5,9 @@
 
 -- Changelog:
 
+-- V 0.4.0.1 ###
+	-- removed debugPrints I forgot to remove 
+	-- added Utils.getNoNil for reverser Settings values 
 -- V 0.4.0.0 ###
 	-- change in version numbers, we're on Github now!
 	-- more smoothing of motorLoad 
@@ -733,8 +736,8 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 			spec.reverser.type = reverserType;
 			spec.reverser.forwardRatio = getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.ratios#forward");
 			spec.reverser.reverseRatio = getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.ratios#reverse");
-			spec.reverser.brakeAggressionBias = getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.settings#brakeAggressionBias");
-			spec.reverser.clutchTime = getXMLFloat(xmlFile, key.."realManualTransmission.reverser("..i..").settings#clutchTime");
+			spec.reverser.brakeAggressionBias = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.settings#brakeAggressionBias"), 1);
+			spec.reverser.clutchTime = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission.reverser("..i..").settings#clutchTime"), 500);
 			
 			spec.reverser.isForward = true;
 			spec.reverser.wantForward = true;
@@ -1167,10 +1170,8 @@ function realManualTransmission:onUpdate(dt)
 			-- simple smoothing of low brakeforce so the changes are not as sudden 
 			if isLowBraking then
 				spec.wantedEngineBrake = (0.1 * spec.wantedEngineBrake ) + (0.9 * wantedEngineBrake);
-				print("is low braking");
 			else
 				spec.wantedEngineBrake = math.max(0, spec.wantedEngineBrake - 0.1);
-				print("is not low braking");
 			end;
 			
 			-- debugs 

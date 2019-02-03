@@ -6,7 +6,7 @@
 	
 	<!-- Sample configuration with all possible values/attributes -->
 																		<!-- configFile is only needed in this XML to identify the basegame vehicle, it is not for the use in Mods! If you want to add a config for a basegame, the name of the XML of that vehicle is what you need to add here -->
-	<realManualTransmission finalRatio="1" switchGearRangeMapping="true" configFile="ASeries.xml" > <!-- finalRatio: speed multiplier for the entire transmission, switchGearRangeMapping: you can change the mapping so you shift the ranges with the gear buttons and gears with the range buttons -->
+	<realManualTransmission finalRatio="1" switchGearRangeMapping="true" configFile="Beispiel.xml" > <!-- finalRatio: speed multiplier for the entire transmission, switchGearRangeMapping: you can change the mapping so you shift the ranges with the gear buttons and gears with the range buttons -->
 		
 		<!-- gears configuration. Every transmission needs to have gears. The number of gears is minimum of 2, no maximum -->	
 		<gears defaultGear="1" powerShift="false" > <!-- defaultGear is optional, you can set gears to powerShift true -->
@@ -64,7 +64,7 @@
 		
      	<reverser type="normal" > 
 			<ratios forward="1" reverse="1" />
-			<settings brakeAggressionBias="1" clutchTime="1200" />
+			<settings brakeAggressionBias="0.3" clutchTime="1200" />
 		</reverser>	   
         
         <rangeSet1 powerShift="false" defaultRange="1" >
