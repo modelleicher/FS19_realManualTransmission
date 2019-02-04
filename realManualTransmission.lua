@@ -4,6 +4,10 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+
+-- V 0.4.0.3 ###
+	-- fixed enginebrake when handthrottle is used 
+	-- fixed "no brake" bug when engine is stalled 
 -- V 0.4.0.2 ###
 	-- added Input Mapping to turn RMT on/off per vehicle 
 	-- turns itself off automatically when AI is hired 
@@ -107,13 +111,11 @@
 realManualTransmission = {};
 
 function realManualTransmission.prerequisitesPresent(specializations)
-	print("prerequisitesPresent is active");
     return true;
 end;
 
 
 function realManualTransmission.registerEventListeners(vehicleType)
-	--print("registerEventListeners called");
 	SpecializationUtil.registerEventListener(vehicleType, "onLoad", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onUpdate", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "saveToXMLFile", realManualTransmission);
@@ -407,8 +409,7 @@ end;
 --
 --
 function realManualTransmission:onLoad(savegame)
-	print("onLoad loaded");
-	
+
 	self.loadGears = realManualTransmission.loadGears;
 	self.loadRanges = realManualTransmission.loadRanges;
 	self.selectGear = realManualTransmission.selectGear;
@@ -502,7 +503,7 @@ function realManualTransmission:onLoad(savegame)
 		end;		
 		spec.maxSpeedPossible = spec.highestGearSpeed * ratio;
 		
-		print("MAX SPEED POSSIBLE: "..tostring(spec.maxSpeedPossible));
+		--print("MAX SPEED POSSIBLE: "..tostring(spec.maxSpeedPossible));
 		
 		
 		-- back up gear ratios 
@@ -652,11 +653,10 @@ function realManualTransmission:onLoad(savegame)
 				oldBrake(self, brake);
 			else
 				local spec = self.spec_realManualTransmission;
-				-- make sure it only brakes when brake is applied not when accelerating or coasting
-				if spec.lastAxisForward >= 0 then 
-					-- apply engine brake if we don't accelerate e.g. coasting or over-revving
-					brake = spec.wantedEngineBrake; --0; --spec.wantedLowBrakeForceScale;
-				end;
+
+				-- add engine brake to brake value 
+				brake = math.min(1, brake + spec.wantedEngineBrake); 
+
 				-- if handbrake is enabled, brake
 				if spec.handBrake then
 					brake = 1;
@@ -667,9 +667,6 @@ function realManualTransmission:onLoad(savegame)
 					brake = math.max(brake, spec.reverser.lastBrakeForce); 
 				end;
 			
-				
-				--print("brake: "..brake);
-				--print("wantedEngineBrake: "..spec.wantedEngineBrake);
 				oldBrake(self, brake);
 			end;
 		end;
@@ -1200,7 +1197,8 @@ function realManualTransmission:onUpdate(dt)
 				end;
 				
 				-- since the delay is still too much using motorLoad, instant low braking when we are completely off the accelerator 
-				if mAxisForward <= 0.001 then
+				-- take hand throttle into account fix 0.4.0.3
+				if mAxisForward <= 0.001 and spec.handThrottlePercent == 0 then
 					isLowBraking = true;
 				end;
 				
@@ -1756,17 +1754,21 @@ function realManualTransmission.newUpdateWheelsPhysics(self, dt, currentSpeed, a
 			acceleration = math.min(acceleration, 0.3);
 		end;
 		
-		-- if the motor is off, don't accelerate either 
+		-- if the motor is off, don't accelerate either, but allow for braking
+		-- we need to get the axis for this since acceleration in this function is 0 when the motor is off 
 		if not self.spec_motorized.isMotorStarted then
-			acceleration = 0;
-		end;		
-
+			
+			if self.getAxisForward ~= nil then
+				acceleration = math.min(0, self:getAxisForward());
+			end;
+			
+		end;			
+				
 		-- sadly, we can't accelerate and brake at the same time.. So.. 
 		if accBackup < 0 then -- negative value, braking
 			acceleration = accBackup;
 		end;		
 		
-	
 	    self.nextMovingDirection = Utils.getNoNil(self.nextMovingDirection, 0)
 		
 		-- set accelerationPedal desired value 
@@ -1779,9 +1781,6 @@ function realManualTransmission.newUpdateWheelsPhysics(self, dt, currentSpeed, a
 			brakePedal = math.abs(acceleration);
 		end;
 		-- 
-		
-		--print(acceleratorPedal);
-	
 	
 	    acceleratorPedal = motor:updateGear(acceleratorPedal, dt)
 	
@@ -1840,7 +1839,7 @@ function realManualTransmission.newUpdateWheelsPhysics(self, dt, currentSpeed, a
 	        --print(string.format("set vehicle props:   accPed=%.1f   speed=%.1f gearRatio=[%.1f %.1f] rpm=[%.1f %.1f]", absAcceleratorPedal, maxSpeed, minGearRatio, maxGearRatio, minMotorRpm, maxMotorRpm))
 	        controlVehicle(self.spec_motorized.motorizedNode, absAcceleratorPedal, maxSpeed, maxAcceleration, minMotorRpm*math.pi/30, maxMotorRpm*math.pi/30, motor:getMotorRotationAccelerationLimit(), minGearRatio, maxGearRatio, maxClutchTorque, neededPtoTorque)
 	    end
-	
+		
 	    self:brake(brakePedal)
 	end;
 end;
