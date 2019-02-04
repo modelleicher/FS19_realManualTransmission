@@ -188,7 +188,7 @@ function rmtMenu:onDraw()
 
 	local spec = self.spec_rmtMenu;
 	
-	if self.hasRMT then
+	if self.hasRMT and self.rmtIsOn then
 		-- vehicle hud 
 		if spec.hud ~= nil and spec.hud.showHud then
 			local hud = spec.hud;

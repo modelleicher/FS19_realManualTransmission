@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="42">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.4.0.1</version>
+    <version>0.4.0.2</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -23,6 +23,8 @@
 		<text name="input_RMT_FORWARD"><de>RMT: Reverser Vorwärts</de><en>RMT: reverser forward</en></text>
 		<text name="input_RMT_REVERSE"><de>RMT: Reverser Rückwärts</de><en>RMT: reverser reverse</en></text>
 		<text name="input_RMT_TOGGLE_REVERSER"><de>RMT: Reverser Umschalten</de><en>RMT: reverser toggle</en></text>
+		
+		<text name="input_RMT_TOGGLE_ONOFF"><de>RMT: An/Aus schalten</de><en>RMT: toggle on/off</en></text>
 		
 		<text name="input_RMT_HANDTHROTTLE_UP"><de>RMT: Handgas erhöhen</de><en>RMT: hand throttle up</en></text>
 		<text name="input_RMT_HANDTHROTTLE_DOWN"><de>RMT: Handgas verringern</de><en>RMT: hand throttle down</en></text>
@@ -63,9 +65,9 @@
 	
 	
 	<inputBinding>
-		<actionBinding action="RMT_MOUSE_BUTTON">
-			<binding device="KB_MOUSE_DEFAULT" input="MOUSE_BUTTON_LEFT" />
-		</actionBinding>
+		<actionBinding action="RMT_TOGGLE_ONOFF">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
 		<actionBinding action="RMT_OPEN_MENU">
 			<binding device="KB_MOUSE_DEFAULT" input="KEY_m" />
 		</actionBinding>		
@@ -156,7 +158,7 @@
 	
 	<actions>
 		<action name="RMT_OPEN_MENU" />
-		<action name="RMT_MOUSE_BUTTON" />
+		<action name="RMT_TOGGLE_ONOFF" />
 		
 		<action name="RMT_AXIS_CLUTCH" />
 		<action name="RMT_CLUTCH_BUTTON" />
