@@ -32,7 +32,7 @@
 			<range ratio="0.512" name="I" /> <!-- the ratio is the ratio the speed is multiplied, name is the display name -->
 			<range ratio="0.612" name="II" />
 			<range ratio="0.72" name="III" isReverse="true"/> <!-- you can also add isReverse to any range to make it a reverse range -->
-			<ratio="1" name="IV" >
+			<range ratio="1" name="IV" >
 				<disableGears gears="1 2" disableType="neutral" /> <!-- you can add gears that are disabled in this range, here gear1 and gear2; disableType="neutral" means that we shift gears to neutral if we select this group. Alternative: disableType="lock" -> we simply can not shift into this range/group while we are in the disabled gear -->
 				<disableRangesSet2 ranges="1" disableType="lock" />  <!-- you can add other ranges that are disabled in this range. Here it is range 1 in rangeSet2. possible disableTypes are "lock" only right now -->
 			</range>
