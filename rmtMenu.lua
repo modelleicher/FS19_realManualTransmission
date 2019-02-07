@@ -223,11 +223,11 @@ function rmtMenu:onDraw()
 					rangeString = rangeString.." "..tostring(fb.rangeSet1.ranges[fb.currentRange1].name);
 					hasRange = true;
 				end;
-				if spec.rangeSet2 ~= nil then
+				if fb.rangeSet2 ~= nil then
 					rangeString = rangeString.." "..tostring(fb.rangeSet2.ranges[fb.currentRange2].name);
 					hasRange = true;
 				end;
-				if spec.rangeSet3 ~= nil then
+				if fb.rangeSet3 ~= nil then
 					rangeString = rangeString.." "..tostring(fb.rangeSet3.ranges[fb.currentRange3].name);
 					hasRange = true;
 				end;

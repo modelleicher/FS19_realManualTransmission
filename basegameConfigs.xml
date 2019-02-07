@@ -3,6 +3,14 @@
 	<!-- Config file for realManualTransmission configs for basegame vehicles (Note, this only works for basegame vehicles! Not Mods) -->
 	<!-- identification via XML name -->
 	
+	<!-- Changelog -->
+	<!--
+		added features in V 0.4.0.4
+		the addition of disableGears and disableRangesSet1 - disableRangesSet3 in each ratio tag in the ranges 
+		- you can add certain gears or ranges that are disabled in this range. You can select if we want to lock shifting into that range or just shift into neutral at the same time for disabled gears.
+		- the disableInRangesX attributes for the gears that did not work properly anyways are now removed since having those tags in the ranges instead is way better. 
+	-->
+	
 	
 	<!-- Sample configuration with all possible values/attributes -->
 																		<!-- configFile is only needed in this XML to identify the basegame vehicle, it is not for the use in Mods! If you want to add a config for a basegame, the name of the XML of that vehicle is what you need to add here -->
@@ -15,7 +23,7 @@
 			<gear speed="13.4" name="3" />
 			<gear speed="20.9" name="4" />
 			<gear speed="30.7" name="5" />
-			<gear speed="50.0" name="6" disableInRangeSet1="1" disableInRangeSet2="2 4" disableInRangeSet3="1 2" /> <!-- you can disable gears in certain ranges, this is buggy still -->
+			<gear speed="50.0" name="6" /> 
 		</gears>
 		
 		<!-- RangeSets, rangeSets are also optional you don't need any-->
@@ -24,7 +32,10 @@
 			<range ratio="0.512" name="I" /> <!-- the ratio is the ratio the speed is multiplied, name is the display name -->
 			<range ratio="0.612" name="II" />
 			<range ratio="0.72" name="III" isReverse="true"/> <!-- you can also add isReverse to any range to make it a reverse range -->
-			<range ratio="1" name="IV" />
+			<ratio="1" name="IV" >
+				<disableGears gears="1 2" disableType="neutral" /> <!-- you can add gears that are disabled in this range, here gear1 and gear2; disableType="neutral" means that we shift gears to neutral if we select this group. Alternative: disableType="lock" -> we simply can not shift into this range/group while we are in the disabled gear -->
+				<disableRangesSet2 ranges="1" disableType="lock" />  <!-- you can add other ranges that are disabled in this range. Here it is range 1 in rangeSet2. possible disableTypes are "lock" only right now -->
+			</range>
 		</rangeSet1>
 		
 

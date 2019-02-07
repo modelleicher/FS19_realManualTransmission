@@ -4,7 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
-
+-- V 0.4.0.4 ###
+	-- fixed hud bug where rangeSet2 and rangeSet3 didn't display 
+	-- added new disableRange / disableGear system to disable / lock out certain ranges or gears in certain ranges (to do, add warning messages)
 -- V 0.4.0.3 ###
 	-- fixed enginebrake when handthrottle is used 
 	-- fixed "no brake" bug when engine is stalled 
@@ -78,14 +80,17 @@
 			<gear speed="13.4" name="3" />
 			<gear speed="20.9" name="4" />
 			<gear speed="30.7" name="5" />
-			<gear speed="50.0" name="6" disableInRangeSet1="1" disableInRangeSet2="2 4" disableInRangeSet3="1 2" />
+			<gear speed="50.0" name="6" />
 		</gears>
 		
 		<rangeSet1 powerShift="true" defaultRange="2" hasNeutralPosition="false" >
 			<range ratio="0.512" name="I" />
 			<range ratio="0.612" name="II" />
 			<range ratio="0.72" name="III" />
-			<range ratio="1" name="IV" />
+			<range ratio="1" name="IV" >
+				<disableGears gears="1 2" disableType="lock" />
+				<disableRangesSet1 ranges="1" disableType="neutral" />
+			</range>
 		</rangeSet1>
 		
 		<rangeSet2 powerShift="false" defaultRange="2">
@@ -131,82 +136,85 @@ function realManualTransmission.onRegisterActionEvents(self, isActiveForInput)
 	self:clearActionEventsTable(spec.actionEvents); -- not sure if we need to clear the table now that we just created it. I suppose you could create the table in onLoad, then it makes more sense
 
 	-- add the actionEvents if vehicle is ready to have Inputs
-	if self.hasRMT and self:getIsActive() then      
-		-- shift up / shift down 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SHIFT_UP, self, realManualTransmission.RMT_SHIFT_UP, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SHIFT_DOWN, self, realManualTransmission.RMT_SHIFT_DOWN, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
-		-- open menu
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_OPEN_MENU, self, realManualTransmission.RMT_OPEN_MENU, false, true, false, true, nil);
-		
-		-- toggle RMT on/off 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_TOGGLE_ONOFF, self, realManualTransmission.RMT_TOGGLE_ONOFF, false, true, false, true, nil);
-
-		
+	if  self:getIsActive() then
+		-- non-specific keybindings, we want to use those even in vehicles without RMT 
 		-- Handbrake Button 
 		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDBRAKE, self, realManualTransmission.RMT_HANDBRAKE, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
-		-- hand throttle 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_UP, self, realManualTransmission.RMT_HANDTHROTTLE, false, false, true, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_DOWN, self, realManualTransmission.RMT_HANDTHROTTLE, false, false, true, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_AXIS, self, realManualTransmission.RMT_HANDTHROTTLE, false, false, true, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
-		-- Range up / range down 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP1, self, realManualTransmission.RMT_RANGE_UP1, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN1, self, realManualTransmission.RMT_RANGE_DOWN1, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP2, self, realManualTransmission.RMT_RANGE_UP2, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN2, self, realManualTransmission.RMT_RANGE_DOWN2, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP3, self, realManualTransmission.RMT_RANGE_UP3, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN3, self, realManualTransmission.RMT_RANGE_DOWN3, false, true, false, true, nil);	
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
+		g_inputBinding:setActionEventTextVisibility(actionEventId, false)	
+
 		-- Reverser Buttons 
 		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_FORWARD, self, realManualTransmission.RMT_FORWARD, false, true, false, true, nil);
 		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
 		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_REVERSE, self, realManualTransmission.RMT_REVERSE, false, true, false, true, nil);
 		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
 		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_TOGGLE_REVERSER, self, realManualTransmission.RMT_TOGGLE_REVERSER, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
-		-- clutch axis 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_AXIS_CLUTCH, self, realManualTransmission.actionEventClutch, false, false, true, true)
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		-- clutch button 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_CLUTCH_BUTTON, self, realManualTransmission.RMT_CLUTCH_BUTTON, true, true, false, true)
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
-		-- neutral button 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_NEUTRAL, self, realManualTransmission.RMT_NEUTRAL, false, true, false, true)
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		
-		-- direct gear buttons
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_1, self, realManualTransmission.RMT_SELECT_GEAR_1, true, true, false, true, nil);	
 		g_inputBinding:setActionEventTextVisibility(actionEventId, false)		
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_2, self, realManualTransmission.RMT_SELECT_GEAR_2, true, true, false, true, nil);	
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_3, self, realManualTransmission.RMT_SELECT_GEAR_3, true, true, false, true, nil);		
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_4, self, realManualTransmission.RMT_SELECT_GEAR_4, true, true, false, true, nil);		
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_5, self, realManualTransmission.RMT_SELECT_GEAR_5, true, true, false, true, nil);		
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_6, self, realManualTransmission.RMT_SELECT_GEAR_6, true, true, false, true, nil);		
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_7, self, realManualTransmission.RMT_SELECT_GEAR_7, true, true, false, true, nil);		
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_8, self, realManualTransmission.RMT_SELECT_GEAR_8, true, true, false, true, nil);		
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+		
+		-- RMT specific keybindings, only add when vehicle has RMT 
+		if self.hasRMT then
+			-- shift up / shift down 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SHIFT_UP, self, realManualTransmission.RMT_SHIFT_UP, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SHIFT_DOWN, self, realManualTransmission.RMT_SHIFT_DOWN, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			
+			-- open menu
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_OPEN_MENU, self, realManualTransmission.RMT_OPEN_MENU, false, true, false, true, nil);
+			
+			-- toggle RMT on/off 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_TOGGLE_ONOFF, self, realManualTransmission.RMT_TOGGLE_ONOFF, false, true, false, true, nil);
+	
+			-- hand throttle 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_UP, self, realManualTransmission.RMT_HANDTHROTTLE, false, false, true, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_DOWN, self, realManualTransmission.RMT_HANDTHROTTLE, false, false, true, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_AXIS, self, realManualTransmission.RMT_HANDTHROTTLE, false, false, true, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			
+			-- Range up / range down 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP1, self, realManualTransmission.RMT_RANGE_UP1, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN1, self, realManualTransmission.RMT_RANGE_DOWN1, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP2, self, realManualTransmission.RMT_RANGE_UP2, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN2, self, realManualTransmission.RMT_RANGE_DOWN2, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP3, self, realManualTransmission.RMT_RANGE_UP3, false, true, false, true, nil);
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN3, self, realManualTransmission.RMT_RANGE_DOWN3, false, true, false, true, nil);	
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+		
+			-- clutch axis 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_AXIS_CLUTCH, self, realManualTransmission.actionEventClutch, false, false, true, true)
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			-- clutch button 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_CLUTCH_BUTTON, self, realManualTransmission.RMT_CLUTCH_BUTTON, true, true, false, true)
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			
+			-- neutral button 
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_NEUTRAL, self, realManualTransmission.RMT_NEUTRAL, false, true, false, true)
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			
+			-- direct gear buttons
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_1, self, realManualTransmission.RMT_SELECT_GEAR_1, true, true, false, true, nil);	
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)		
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_2, self, realManualTransmission.RMT_SELECT_GEAR_2, true, true, false, true, nil);	
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_3, self, realManualTransmission.RMT_SELECT_GEAR_3, true, true, false, true, nil);		
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_4, self, realManualTransmission.RMT_SELECT_GEAR_4, true, true, false, true, nil);		
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_5, self, realManualTransmission.RMT_SELECT_GEAR_5, true, true, false, true, nil);		
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_6, self, realManualTransmission.RMT_SELECT_GEAR_6, true, true, false, true, nil);		
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_7, self, realManualTransmission.RMT_SELECT_GEAR_7, true, true, false, true, nil);		
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_SELECT_GEAR_8, self, realManualTransmission.RMT_SELECT_GEAR_8, true, true, false, true, nil);		
+			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+		end;
 	end;
 end;
 
@@ -293,7 +301,8 @@ end;
 -- shift up/down and range up/down functions 
 function realManualTransmission:RMT_SHIFT_UP()
 	if not self.spec_realManualTransmission.switchGearRangeMapping then
-		self:selectGear(self.spec_realManualTransmission.currentGear + 1, inputValue);
+		--self:selectGear(self.spec_realManualTransmission.currentGear + 1, inputValue, true);
+		self:processGearInputs(nil, nil, true);
 	else
 		if self.spec_realManualTransmission.rangeSet1 ~= nil then
 			self:selectRange(self.spec_realManualTransmission.currentRange1 + 1, 1, inputValue);
@@ -302,7 +311,7 @@ function realManualTransmission:RMT_SHIFT_UP()
 end;
 function realManualTransmission:RMT_SHIFT_DOWN()
 	if not self.spec_realManualTransmission.switchGearRangeMapping then
-		self:selectGear(self.spec_realManualTransmission.currentGear - 1, inputValue);
+		self:processGearInputs(nil, nil, false);
 	else
 		if self.spec_realManualTransmission.rangeSet1 ~= nil then
 			self:selectRange(self.spec_realManualTransmission.currentRange1 - 1, 1, inputValue);
@@ -316,7 +325,7 @@ function realManualTransmission:RMT_RANGE_UP1(actionName, inputValue)
 			self:selectRange(spec.currentRange1 + 1, 1, inputValue);
 		end;
 	else
-		self:selectGear(spec.currentGear +1, inputValue);
+		self:processGearInputs(nil, nil, true);
 	end;
 end;
 function realManualTransmission:RMT_RANGE_DOWN1()
@@ -326,7 +335,7 @@ function realManualTransmission:RMT_RANGE_DOWN1()
 			self:selectRange(spec.currentRange1 - 1, 1, inputValue);	
 		end;
 	else
-		self:selectGear(spec.currentGear -1, inputValue);
+		self:processGearInputs(nil, nil, false);
 	end;
 end;
 function realManualTransmission:RMT_RANGE_UP2(actionName, inputValue)
@@ -727,6 +736,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 			spec.rangeSet1.highestRatio = highestRatio;
 			spec.hasRangeSet1 = true;
 			spec.currentRange1 = spec.rangeSet1.defaultRange;
+			print("loaded rangeSet1");
 		end;
 		
 		-- load rangeSet 2
@@ -741,6 +751,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 			spec.rangeSet2.highestRatio = highestRatio;
 			spec.hasRangeSet2 =  true;
 			spec.currentRange2 = spec.rangeSet2.defaultRange;
+			print("loaded rangeSet2");
 		end;
 		
 		-- load rangeSet 3
@@ -755,6 +766,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 			spec.rangeSet3.highestRatio = highestRatio;
 			spec.hasRangeSet3 = true;
 			spec.currentRange3 = spec.rangeSet3.defaultRange;
+			print("loaded rangeSet3");
 		end;	
 		
 		-- load reverser 
@@ -793,12 +805,64 @@ function realManualTransmission:loadRanges(xmlFile, key)
 		if range.ratio == nil then
 			break;
 		end;
+		
+		
 		-- load name and isReverse, if isReverse is true, this range is a reverse-range
 		range.name = getXMLString(xmlFile, key..i..")#name");
 		range.isReverse = getXMLBool(xmlFile, key..i..")#isReverse");
-
-		-- also store the highest ratio 
+		-- load disable gears 
+		local disableGears = getXMLString(xmlFile, key..i..").disableGears#gears");
+		if disableGears ~= nil and disableGears ~= "" then
+			local disableGearsTable = StringUtil.splitString(" ", disableGears);
+			range.disableGearsTable = {};
+			for _, gear in pairs(disableGearsTable) do
+				range.disableGearsTable[gear] = true;
+			end;
+			range.disableGearsType = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableGears#disableType"));
+		else
+			range.disableGearsTable = nil;
+		end;
 		
+		-- load disable ranges 
+		-- rangeSet1 
+		local disableRanges1 = getXMLString(xmlFile, key..i..").disableRangesSet1#ranges");
+		if disableRanges1 ~= nil and disableRanges1 ~= "" then
+			local disableRanges1Table = StringUtil.splitString(" ", disableRanges1);
+			range.disableRanges1Table = {};
+			for _, rangeKey in pairs(disableRanges1Table) do
+				range.disableRanges1Table[rangeKey] = true;
+			end;
+			range.disableRanges1Type = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableRangesSet1#disableType"));
+		else
+			range.disableRanges1Table = nil;
+		end;
+		-- rangeSet2 
+		local disableRanges2 = getXMLString(xmlFile, key..i..").disableRangesSet2#ranges");
+		if disableRanges2 ~= nil and disableRanges2 ~= "" then
+			local disableRanges2t = StringUtil.splitString(" ", disableRanges2);
+			range.disableRanges2Table = {};
+			for _, rangeKey in pairs(disableRanges2t) do
+				range.disableRanges2Table[rangeKey] = true;
+			end;
+			range.disableRanges2Type = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableRangesSet2#disableType"));
+		else
+			range.disableRanges2Table = nil;
+		end;		
+		-- rangeSet3 
+		local disableRanges3 = getXMLString(xmlFile, key..i..").disableRangesSet3#ranges");
+		if disableRanges3 ~= nil and disableRanges3 ~= "" then
+			local disableRanges3Table = StringUtil.splitString(" ", disableRanges3);
+			range.disableRanges3Table = {};
+			for _, rangeKey in pairs(disableRanges3Table) do
+				range.disableRanges3Table[rangeKey] = true;
+			end;
+			range.disableRanges3Type = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableRangesSet3#disableType"));
+		else
+			range.disableRanges3Table = nil;
+		end;		
+		--
+				
+		-- also store the highest ratio 
 		if range.ratio > highestRatio then
 			highestRatio = range.ratio;
 		end;
@@ -846,42 +910,6 @@ function realManualTransmission:loadGears(xmlFile, key)
 		gear.mappedToGear = Utils.getNoNil(getXMLInt(xmlFile, key..i..")#mappedToGear"), i+1);
 		spec.gearMappings[gear.mappedToGear] = i+1;
 		
-		-- disable in range
-		-- this is a string containing the ranges this gear is disabled in. e.g. disableInRanges1="1 2 4" so that gear is disabled in ranges 1, 2 and 4.
-		-- since we have 3 possible range-sets there are 3 of these 
-		gear.disableInRanges1 = getXMLString(xmlFile, key..i..")#disableInRangeSet1");
-		gear.disableInRanges2 = getXMLString(xmlFile, key..i..")#disableInRangeSet2");
-		gear.disableInRanges3 = getXMLString(xmlFile, key..i..")#disableInRangeSet3");
-		-- split the string to get the results as a table, its still a string value though 
-		-- if there are no entries we just set that particular disable variable to nil 
-		if gear.disableInRanges1 ~= nil and gear.disableInRanges1 ~= "" then
-			local disableInRanges1 = StringUtil.splitString(" ", gear.disableInRanges1);
-			gear.disableInRanges1 = {};
-			for _ , range in pairs(disableInRanges1) do
-				gear.disableInRanges1[range] = true;
-			end;
-		else
-			gear.disableInRanges1 = nil;
-		end;
-		
-		if gear.disableInRanges2 ~= nil and gear.disableInRanges2 ~= "" then
-			local disableInRanges2 = StringUtil.splitString(" ", gear.disableInRanges2);
-			gear.disableInRanges2 = {};
-			for _ , range in pairs(disableInRanges2) do
-				gear.disableInRanges2[range] = true;
-			end;
-		else
-			gear.disableInRanges2 = nil;
-		end;		
-		if gear.disableInRanges3 ~= nil and gear.disableInRanges3 ~= "" then
-			local disableInRanges3 = StringUtil.splitString(" ", gear.disableInRanges3);
-			gear.disableInRanges3 = {};
-			for _ , range in pairs(disableInRanges3) do
-				gear.disableInRanges3[range] = true;
-			end;
-		else
-			gear.disableInRanges3 = nil;
-		end;
 		-- insert gear to gears table 
 		table.insert(gears, gear);
 		i = i+1;
@@ -893,14 +921,44 @@ function realManualTransmission:loadGears(xmlFile, key)
 end;
 
 -- process the inputs from the gear buttons, we need this function to easily select range or gears in case its switched around. Its also for future proofing  
-function realManualTransmission:processGearInputs(inputIndex, inputValue)
+function realManualTransmission:processGearInputs(inputIndex, inputValue, isSequentialUp)
+	local spec = self.spec_realManualTransmission;
 	
-	if self.spec_realManualTransmission.switchGearRangeMapping then -- if we have gears and ranges switched we want to select the range instead 
-		self:selectRange(inputIndex, 1, inputValue);
-	else
-		self:selectGear(inputIndex, inputValue, inputIndex);
+	if isSequentialUp == nil then -- we called this via direct selection, so we select the gear or range directly 
+		if spec.switchGearRangeMapping then -- if we have gears and ranges switched we want to select the range instead 
+			self:selectRange(inputIndex, 1, inputValue);
+		else
+			self:selectGear(inputIndex, inputValue, inputIndex);
+		end;
 	end;
 	
+	if isSequentialUp or isSequentialUp == false then -- we called this via up/down keys e.g. sequential, true means up, false means down (nil means not sequential)
+		-- if we want to shift up or down 
+		local dir = 1;
+		if isSequentialUp == false then
+			dir = -1;
+		end;
+				
+		-- just select the gear we want to.. see if we get lockOut back 
+		local lockOut = self:selectGear(spec.currentGear - (1*dir), inputValue);
+		
+		-- if we get locked out of the gear we want to shift in, try to shift down to the next gear and the next
+		-- to see if we can shift into the next allowed gear, stop if 1 is reached 
+		if lockOut then
+			local i = 2;
+			while true do
+				local curGear = math.min(math.max(1, spec.currentGear - (i*dir)), spec.numberOfGears); -- cur wanted gear is i or 1
+				lockOut = self:selectGear(curGear, inputValue); -- try the next gear, return if we are locked out again 
+				if lockOut and (curGear == 1 or curGear == spec.numberOfGears) or lockOut == false then -- if we're still locked out but curGear is 1 or max gear, stop looking for gears 
+					break;
+				end;	
+				i = i+1;
+			end;
+		end;
+			
+			
+	end;	
+		
 end;
 
 function realManualTransmission:selectRange(wantedRange, rangeSetIndex, inputValue)
@@ -924,48 +982,116 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, inputVal
 		end;
 		-- now we need to check if the rangeSet even exists 
 		if rangeSet ~= nil then
-			--print("RangeSet not nil "..tostring(rangeSetIndex));
 		
 			-- now see if inputValue is not 0 (0 means neutral)
 			if inputValue ~= 0 then
 				-- make sure our wantedRange is between min and max range we have 
 				wantedRange = math.max(1, math.min(wantedRange, rangeSet.numberOfRanges));
+				local wantedNeutral = false;
 				
-				-- check if clutch is pressed or range is powershift 
-				if spec.clutchPercent < 0.4 or rangeSet.powerShift then
+				-- lockout check 
+				-- check if we are locked out of the range we want to shift in or any other prevention of shifting 
+				if rangeSetIndex == 1 then
+					-- check if we can shift into this range or if it is disabled in the gear we are in 
+					if spec.rangeSet1.ranges[wantedRange].disableGearsTable ~= nil and spec.rangeSet1.ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
+						if spec.rangeSet1.ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
+							wantedRange = nil;
+						elseif spec.rangeSet1.ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
+							wantedNeutral = true;
+						end;
+					end;
 					
-					-- return wantedRange 
-					if wantedRange ~= nil then
-						if rangeSetIndex == 1 then 
+					-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
+					if spec.rangeSet2 ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Table ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Table[tostring(wantedRange)] then
+						if spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Type == "lock" then -- we can not shift into this range since it is locked 
+							wantedRange = nil;
+						elseif spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Type == "neutral" then
+							-- not implemented yet 
+						end;
+					end;
+					if spec.rangeSet3 ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Table ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Table[tostring(wantedRange)] then
+						if spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Type == "lock" then -- we can not shift into this range since it is locked 
+							wantedRange = nil;
+						elseif spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Type == "neutral" then
+							-- not implemented yet 
+						end;
+					end;
+				elseif rangeSetIndex == 2 then
+					-- check if we can shift into this range or if it is disabled in the gear we are in 
+					if spec.rangeSet2.ranges[wantedRange].disableGearsTable ~= nil and spec.rangeSet2.ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
+						if spec.rangeSet2.ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
+							wantedRange = nil;
+						elseif spec.rangeSet2.ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
+							spec.neutral = true;
+						end;
+					end;
+					
+					-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
+					if spec.rangeSet1 ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Table ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Table[tostring(wantedRange)] then
+						if spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Type == "lock" then -- we can not shift into this range since it is locked 
+							wantedRange = nil;
+						elseif spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Type == "neutral" then
+							-- not implemented yet 
+						end;
+					end;
+					if spec.rangeSet3 ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Table ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Table[tostring(wantedRange)] then
+						if spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Type == "lock" then -- we can not shift into this range since it is locked 
+							wantedRange = nil;
+						elseif spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Type == "neutral" then
+							-- not implemented yet 
+						end;
+					end;
+				elseif rangeSetIndex == 3 then
+					-- check if we can shift into this range or if it is disabled in the gear we are in 
+					if spec.rangeSet3.ranges[wantedRange].disableGearsTable ~= nil and spec.rangeSet3.ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
+						if spec.rangeSet3.ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
+							wantedRange = nil;
+						elseif spec.rangeSet3.ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
+							spec.neutral = true;
+						end;
+					end;
+					
+					-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
+					if spec.rangeSet1 ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Table ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Table[tostring(wantedRange)] then
+						if spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Type == "lock" then -- we can not shift into this range since it is locked 
+							wantedRange = nil;
+						elseif spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Type == "neutral" then
+							-- not implemented yet 
+						end;
+					end;
+					if spec.rangeSet2 ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Table ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Table[tostring(wantedRange)] then
+						if spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Type == "lock" then -- we can not shift into this range since it is locked 
+							wantedRange = nil;
+						elseif spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Type == "neutral" then
+							-- not implemented yet 
+						end;
+					end;
+				end;
+				-- end of lockout check 
+				
+				-- now see if wantedRange is still not nil, only continue if its not nil 
+				if wantedRange ~= nil then
+					-- check if clutch is pressed or range is powershift 
+					if spec.clutchPercent < 0.4 or rangeSet.powerShift then
+						-- return wantedRange 
+						if rangeSetIndex == 1 then
 							spec.currentRange1 = wantedRange;
 							rangeSet.currentRange = spec.currentRange1
-							-- if the current gear is disabled in the range we shift into, set gears to neutral 
-							if spec.gears[spec.currentGear].disableInRanges1 ~= nil then
-								if spec.gears[spec.currentGear].disableInRanges1[tostring(spec.currentRange1)] then
-									spec.neutral = true;
-								end;
-							end;
 						elseif rangeSetIndex == 2 then
 							spec.currentRange2 = wantedRange;
 							rangeSet.currentRange = spec.currentRange2;
-							-- if the current gear is disabled in the range we shift into, set gears to neutral 
-							if spec.gears[spec.currentGear].disableInRanges2 ~= nil then
-								if spec.gears[spec.currentGear].disableInRanges2[tostring(spec.currentRange2)] then
-									spec.neutral = true;
-								end;
-							end;
 						elseif rangeSetIndex == 3 then
 							spec.currentRange3 = wantedRange;
 							rangeSet.currentRange = spec.currentRange3;
-							-- if the current gear is disabled in the range we shift into, set gears to neutral
-							if spec.gears[spec.currentGear].disableInRanges3 ~= nil then							
-								if spec.gears[spec.currentGear].disableInRanges3[tostring(spec.currentRange3)] then
-									spec.neutral = true;
-								end;
-							end;
 						end;
-					end;
-				end;	
+						
+						-- if we want to shift gears into neutral due to range lockout, we do that now when the clutch is pressed.
+						if wantedNeutral then 
+							spec.neutral = true;
+						end;
+					end;				
+				end;
+				
 
 				-- now for the automatic clutch 
 				-- check if we use auto clutch, check if gears aren't powershift. Check if we didn't already set the gear by manually pressing the clutch (or if we try to set the gear we are already in)
@@ -995,7 +1121,7 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 	--print("select gear called");
 	-- to do, Event!
 	local spec = self.spec_realManualTransmission;
-	
+	local lockedOut = false;
 	
 	-- first check if wantedGear is not nil and inputValue is not 0
 	if wantedGear ~= nil and inputValue ~= 0 then
@@ -1011,26 +1137,32 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 			-- now make sure that wantedGear isn't above our highest gear 
 			wantedGear = math.max(1, math.min(wantedGear, spec.numberOfGears));
 			
-			-- now check if that wanted gear might be disabled in the range we are in 
-			-- we need to check for all 3 possible rangesets 
-			local gear = spec.gears[wantedGear]
-			if gear.disableInRanges1 ~= nil then
-				if gear.disableInRanges1[tostring(spec.currentRange1)] == true then
-					wantedGear = nil;
-				end;
-			end;
-			if gear.disableInRanges2 ~= nil then
-				if gear.disableInRanges2[tostring(spec.currentRange2)] == true then
-					wantedGear = nil;
-				end;
-			end;
-			if gear.disableInRanges3 ~= nil then
-				if gear.disableInRanges3[tostring(spec.currentRange3)] == true then
-					wantedGear = nil;
-				end;
-			end;	
 		end;
 		-- if wantedGear is not nil yet, we are pretty sure wantedGear is valid and the gear we want 
+		
+		-- next, see if we can even shift into that gear in the range we are currently in 
+		-- check for each of the rangeSets 
+		
+		if spec.rangeSet1 ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableGearsTable ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableGearsTable[tostring(wantedGear)] then 
+			-- it doesn't matter it the disableType is lock or neutral because we're not trying to shift into the range but into the disabled gear so its always locked out 
+			if spec.rangeSet1.ranges[spec.currentRange1].disableGearsType == "lock" or spec.rangeSet1.ranges[spec.currentRange1].disableGearsType == "neutral" then 
+				wantedGear = nil;
+				lockedOut = true;
+			end;
+		end;			
+		if spec.rangeSet2 ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableGearsTable ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableGearsTable[tostring(wantedGear)] then 
+			if spec.rangeSet2.ranges[spec.currentRange2].disableGearsType == "lock" or spec.rangeSet2.ranges[spec.currentRange1].disableGearsType == "neutral" then
+				wantedGear = nil;
+				lockedOut = true;
+			end;
+		end;		
+		if spec.rangeSet3 ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableGearsTable ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableGearsTable[tostring(wantedGear)] then 
+			if spec.rangeSet3.ranges[spec.currentRange3].disableGearsType == "lock" or spec.rangeSet3.ranges[spec.currentRange1].disableGearsType == "neutral" then 
+				wantedGear = nil;
+				lockedOut = true;
+			end;
+		end;
+
 			
 		-- now check if clutch is pressed enough to allow gearshift or if gears can be shifted under power 
 		if spec.clutchPercent < 0.4 or spec.gearsPowershift then
@@ -1040,7 +1172,6 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 			else
 				-- return wanted gear 
 				if wantedGear ~= nil then
-					--print("spec currentGear is set to wanted gear");
 					spec.currentGear = wantedGear;
 					spec.neutral = false; -- set neutral to false if we are in gear 
 				end;
@@ -1064,7 +1195,7 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 	if inputValue == 0 and spec.buttonReleaseNeutral then
 		spec.neutral = true;
 	end;
-
+	return lockedOut;
 end;
 
 
