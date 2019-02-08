@@ -51,6 +51,7 @@ function rmtLoadXMLConfigs:loadMap(n)
 	g_currentMission.rmtGlobals = {};
 	g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
 
+	
 end;
 
 addModEventListener(rmtLoadXMLConfigs);

@@ -4,6 +4,11 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.4.0.6 ###
+	-- fixed Log Error when shifting into non-existing gear with H-Shifter 
+	-- added realManualTransmissionConfigurations so you can have multiple transmission configs in one vehicle 
+	-- fixed bug that menu settings did not save 
+	-- fixed bug in disableRange feature where you could still shift into disabled range 
 -- V 0.4.0.4 ###
 	-- fixed hud bug where rangeSet2 and rangeSet3 didn't display 
 	-- added new disableRange / disableGear system to disable / lock out certain ranges or gears in certain ranges (to do, add warning messages)
@@ -417,6 +422,12 @@ function realManualTransmission:getSmoothingTableAverage(smoothingTable, addedVa
 end;
 --
 --
+function realManualTransmission.initSpecialization()
+	print("initSpecialization");
+	g_configurationManager:addConfigurationType("realManualTransmission", "realManualTransmission", nil, nil, nil, nil, ConfigurationUtil.SELECTOR_MULTIOPTION)
+end
+
+
 function realManualTransmission:onLoad(savegame)
 
 	self.loadGears = realManualTransmission.loadGears;
@@ -469,8 +480,9 @@ function realManualTransmission:onLoad(savegame)
 		
 	end;
 		
+
 	
-	if hasXMLProperty(xmlFile, "vehicle.realManualTransmission") then	
+	if hasXMLProperty(xmlFile, "vehicle.realManualTransmission") or hasXMLProperty(xmlFile, "vehicle.realManualTransmissionConfigurations.realManualTransmissionConfiguration") then	
 		self.hasRMT = true;
 		
 		-- load from vehicle XML 
@@ -715,6 +727,14 @@ end;
 
 function realManualTransmission:loadFromXML(xmlFile, key, i)
 		local spec = self.spec_realManualTransmission;
+		
+		-- V 0.4.0.6 addition of configurations 
+		if self.configurations ~= nil then 
+			if self.configurations.realManualTransmission ~= nil then -- see if we have configurations 
+				-- change key to config key 
+				key = key.."realManualTransmissionConfigurations.realManualTransmissionConfiguration("..(self.configurations.realManualTransmission-1)..").";
+			end;
+		end;
 	
 		-- first, load gears from XML 
 		local gears, numberOfGears, highestSpeed = self:loadGears(xmlFile, key.."realManualTransmission("..i..").gears.gear(");
@@ -991,11 +1011,12 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, inputVal
 				
 				-- lockout check 
 				-- check if we are locked out of the range we want to shift in or any other prevention of shifting 
+				local lockOutTrue = false;
 				if rangeSetIndex == 1 then
 					-- check if we can shift into this range or if it is disabled in the gear we are in 
 					if spec.rangeSet1.ranges[wantedRange].disableGearsTable ~= nil and spec.rangeSet1.ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
 						if spec.rangeSet1.ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet1.ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
 							wantedNeutral = true;
 						end;
@@ -1004,23 +1025,35 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, inputVal
 					-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
 					if spec.rangeSet2 ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Table ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Table[tostring(wantedRange)] then
 						if spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Type == "lock" then -- we can not shift into this range since it is locked 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet2.ranges[spec.currentRange2].disableRanges1Type == "neutral" then
 							-- not implemented yet 
 						end;
 					end;
 					if spec.rangeSet3 ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Table ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Table[tostring(wantedRange)] then
 						if spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Type == "lock" then -- we can not shift into this range since it is locked 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet3.ranges[spec.currentRange3].disableRanges1Type == "neutral" then
 							-- not implemented yet 
 						end;
 					end;
+					
+					-- check if the range we want to shift into disables any other ranges and locks us out that way 
+					if spec.rangeSet1.ranges[wantedRange].disableRanges2Table ~= nil and spec.rangeSet1.ranges[wantedRange].disableRanges2Table[tostring(spec.currentRange2)] then
+						if spec.rangeSet1.ranges[wantedRange].disableRanges2Type == "lock" then
+							lockOutTrue = true;
+						end;
+					end;
+					if spec.rangeSet1.ranges[wantedRange].disableRanges3Table ~= nil and spec.rangeSet1.ranges[wantedRange].disableRanges3Table[tostring(spec.currentRange3)] then
+						if spec.rangeSet1.ranges[wantedRange].disableRanges3Type == "lock" then
+							lockOutTrue = true;
+						end;
+					end;					
 				elseif rangeSetIndex == 2 then
 					-- check if we can shift into this range or if it is disabled in the gear we are in 
 					if spec.rangeSet2.ranges[wantedRange].disableGearsTable ~= nil and spec.rangeSet2.ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
 						if spec.rangeSet2.ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet2.ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
 							spec.neutral = true;
 						end;
@@ -1029,23 +1062,35 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, inputVal
 					-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
 					if spec.rangeSet1 ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Table ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Table[tostring(wantedRange)] then
 						if spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Type == "lock" then -- we can not shift into this range since it is locked 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet1.ranges[spec.currentRange1].disableRanges2Type == "neutral" then
 							-- not implemented yet 
 						end;
 					end;
 					if spec.rangeSet3 ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Table ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Table[tostring(wantedRange)] then
 						if spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Type == "lock" then -- we can not shift into this range since it is locked 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet3.ranges[spec.currentRange3].disableRanges2Type == "neutral" then
 							-- not implemented yet 
 						end;
 					end;
+					
+					-- check if the range we want to shift into disables any other ranges and locks us out that way 
+					if spec.rangeSet2.ranges[wantedRange].disableRanges1Table ~= nil and spec.rangeSet2.ranges[wantedRange].disableRanges1Table[tostring(spec.currentRange1)] then
+						if spec.rangeSet2.ranges[wantedRange].disableRanges1Type == "lock" then
+							lockOutTrue = true;
+						end;
+					end;
+					if spec.rangeSet2.ranges[wantedRange].disableRanges3Table ~= nil and spec.rangeSet2.ranges[wantedRange].disableRanges3Table[tostring(spec.currentRange3)] then
+						if spec.rangeSet2.ranges[wantedRange].disableRanges3Type == "lock" then
+							lockOutTrue = true;
+						end;
+					end;					
 				elseif rangeSetIndex == 3 then
 					-- check if we can shift into this range or if it is disabled in the gear we are in 
 					if spec.rangeSet3.ranges[wantedRange].disableGearsTable ~= nil and spec.rangeSet3.ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
 						if spec.rangeSet3.ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet3.ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
 							spec.neutral = true;
 						end;
@@ -1054,20 +1099,39 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, inputVal
 					-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
 					if spec.rangeSet1 ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Table ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Table[tostring(wantedRange)] then
 						if spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Type == "lock" then -- we can not shift into this range since it is locked 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet1.ranges[spec.currentRange1].disableRanges3Type == "neutral" then
 							-- not implemented yet 
 						end;
 					end;
 					if spec.rangeSet2 ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Table ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Table[tostring(wantedRange)] then
 						if spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Type == "lock" then -- we can not shift into this range since it is locked 
-							wantedRange = nil;
+							lockOutTrue = true;
 						elseif spec.rangeSet2.ranges[spec.currentRange2].disableRanges3Type == "neutral" then
 							-- not implemented yet 
 						end;
 					end;
+					
+					-- check if the range we want to shift into disables any other ranges and locks us out that way 
+					if spec.rangeSet3.ranges[wantedRange].disableRanges1Table ~= nil and spec.rangeSet3.ranges[wantedRange].disableRanges1Table[tostring(spec.currentRange1)] then
+						if spec.rangeSet3.ranges[wantedRange].disableRanges1Type == "lock" then
+							lockOutTrue = true;
+						end;
+					end;						
+					if spec.rangeSet3.ranges[wantedRange].disableRanges2Table ~= nil and spec.rangeSet3.ranges[wantedRange].disableRanges2Table[tostring(spec.currentRange2)] then
+						if spec.rangeSet3.ranges[wantedRange].disableRanges2Type == "lock" then
+							lockOutTrue = true;
+						end;
+					end;				
 				end;
+				
+				if lockOutTrue then
+					wantedRange = nil;
+				end;
+				
 				-- end of lockout check 
+				
+				
 				
 				-- now see if wantedRange is still not nil, only continue if its not nil 
 				if wantedRange ~= nil then
@@ -1130,7 +1194,7 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 		-- check if wantedGear is not -1, -1 means we want to set it to neutral 
 		if wantedGear ~= -1 then
 			-- now check if wantedGear isn't the actual gear we want, in case we had a mappingValue assigned to the selectGear call 
-			if mappingValue ~= nil then
+			if mappingValue ~= nil and spec.gearMappings[mappingValue] ~= nil then
 				wantedGear = spec.gearMappings[mappingValue];
 			end;
 			

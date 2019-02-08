@@ -141,7 +141,7 @@ function rmtMenu:onPostLoad(savegame)
 		-- load settings from XML 
 		local xmlFile = savegame.xmlFile
 
-		local key1 = savegame.key..".FS19_FakeBox.rmtMenu.hudSettings"
+		local key1 = savegame.key..".FS19_realManualTransmission.rmtMenu.hudSettings"
 		local hud = self.spec_rmtMenu.hud
 		if hud ~= nil then
 			hud.posX = Utils.getNoNil(getXMLFloat(xmlFile, key1.."#posX"), hud.posX);
