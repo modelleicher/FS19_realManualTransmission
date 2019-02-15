@@ -4,6 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.4.0.7 ###
+	-- added default naming for gears if name="" attribute is missing in config 
+	-- having gears is no longer needed (in order for other transmission types to work later on)
 -- V 0.4.0.6 ###
 	-- fixed Log Error when shifting into non-existing gear with H-Shifter 
 	-- added realManualTransmissionConfigurations so you can have multiple transmission configs in one vehicle 
@@ -494,23 +497,6 @@ function realManualTransmission:onLoad(savegame)
 	if self.hasRMT then
 
 		
-		-- calculate min and max gear ratio for later calculations 
-		local lastRatio = 0;
-		for _, gear in pairs(spec.gears) do
-			if gear.ratio > lastRatio then	
-				lastRatio = gear.ratio;
-			end;
-		end;
-		spec.maxGearRatio = lastRatio;
-		for _, gear in pairs(spec.gears) do
-			if gear.ratio < lastRatio then
-				lastRatio = gear.ratio;
-			end;
-		end;
-		spec.minGearRatio = lastRatio;
-		spec.gearRatioRange = spec.maxGearRatio - spec.minGearRatio;
-		-- 
-		
 		-- calculate max speed 
 		local ratio = 1;
 		if spec.rangeSet1 ~= nil then 
@@ -521,8 +507,12 @@ function realManualTransmission:onLoad(savegame)
 		end;
 		if spec.rangeSet3 ~= nil then 
 			ratio = ratio * spec.rangeSet3.highestRatio;
-		end;		
-		spec.maxSpeedPossible = spec.highestGearSpeed * ratio;
+		end;	
+		if spec.highestGearSpeed ~= nil then	
+			spec.maxSpeedPossible = spec.highestGearSpeed * ratio * spec.finalRatio;
+		else
+			spec.maxSpeedPossible = 836 / ratio * spec.finalRatio;
+		end;
 		
 		--print("MAX SPEED POSSIBLE: "..tostring(spec.maxSpeedPossible));
 		
@@ -738,11 +728,13 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 	
 		-- first, load gears from XML 
 		local gears, numberOfGears, highestSpeed = self:loadGears(xmlFile, key.."realManualTransmission("..i..").gears.gear(");
-		spec.gears = gears;
-		spec.numberOfGears = numberOfGears;
-		spec.defaultGear = Utils.getNoNil(getXMLInt(xmlFile, key.."realManualTransmission("..i..").gears#defaultGear"), 1);
-		spec.gearsPowershift = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").gears#powerShift"), false);
-		spec.highestGearSpeed = highestSpeed;
+		if numberOfGears ~= nil and numberOfGears > 0 then
+			spec.gears = gears;
+			spec.numberOfGears = numberOfGears;
+			spec.defaultGear = Utils.getNoNil(getXMLInt(xmlFile, key.."realManualTransmission("..i..").gears#defaultGear"), 1);
+			spec.gearsPowershift = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").gears#powerShift"), false);
+			spec.highestGearSpeed = highestSpeed;
+		end;
 		
 		-- now load rangeSet 1
 		local ranges, numberOfRanges, highestRatio = self:loadRanges(xmlFile, key.."realManualTransmission("..i..").rangeSet1.range(");
@@ -923,7 +915,7 @@ function realManualTransmission:loadGears(xmlFile, key)
 		
 		
 		-- load name and isReverse, if isReverse is true, this gear is a reverse-gear
-		gear.name = getXMLString(xmlFile, key..i..")#name");
+		gear.name = Utils.getNoNil(getXMLString(xmlFile, key..i..")#name"), tostring(i+1));
 		gear.isReverse = getXMLBool(xmlFile, key..i..")#isReverse");
 		
 		-- we can map the gear to a gear-input that is not the number of the gear 
@@ -1494,11 +1486,18 @@ function realManualTransmission:onUpdate(dt)
 			if spec.rangeSet3 ~= nil then	
 				rangeRatio = rangeRatio * spec.rangeSet3.ranges[spec.currentRange3].ratio;
 			end;
+			-- then get the current gear ratio provided we have gears 
+			local gearRatio = 1;
+			if spec.gears ~= nil then
+				gearRatio = spec.gears[spec.currentGear].ratio;
+			end;
 			-- now calculate wanted gear ratio with gear and rangeRatio and final ratio 
 			-- we need to divide since its inverse ratio 
-			spec.wantedGearRatio = spec.gears[spec.currentGear].ratio / rangeRatio / spec.finalRatio;
-			spec.currentWantedSpeed = spec.gears[spec.currentGear].speed * rangeRatio * spec.finalRatio;
+			spec.wantedGearRatio = gearRatio / rangeRatio / spec.finalRatio;
 			
+			-- current wanted speed is needed for engine break calculation
+			spec.currentWantedSpeed = 836 / spec.wantedGearRatio;  -- (836 is a "giants constant for converting ratio to speed) 
+
 
 			-- calculating hand throttle 
 			if spec.handThrottleDown then
@@ -1648,7 +1647,7 @@ function realManualTransmission:onUpdate(dt)
 			-- direction selection
 			-- check if the gear or range we are in is reverse
 			local reverseRatio = 1; -- we start out in forward mode 
-			if spec.gears[spec.currentGear].isReverse then
+			if spec.gears ~= nil and spec.gears[spec.currentGear].isReverse then
 				reverseRatio = reverseRatio * -1; -- if the gear is reverse, * -1 puts us in reverse 
 			end;
 			if spec.rangeSet1 ~= nil then

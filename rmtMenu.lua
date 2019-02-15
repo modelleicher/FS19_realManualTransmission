@@ -208,7 +208,7 @@ function rmtMenu:onDraw()
 				end;
 				y = y + addY;
 			end;
-			if hud.showGear then
+			if hud.showGear and fb.gears ~= nil then
 				if fb.neutral then
 					renderText(x, y, 0.02, "Gear: N");
 				else
