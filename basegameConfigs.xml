@@ -62,6 +62,26 @@
 	<!-- end sample -->
 	
 	<!-- start actual -->
+	
+	<realManualTransmission configFile="fendt700.xml" >
+		
+		<simpleCVT>
+			<ratios minRatio="12.3" maxRatio="300" />
+			<settings autoBrakeforceBias="1" />
+		</simpleCVT>
+	
+     	<reverser type="normal" > 
+			<ratios forward="1" reverse="1" />
+			<settings brakeAggressionBias="0.3" clutchTime="1200" />
+		</reverser>	   
+        
+        <rangeSet1 powerShift="false" defaultRange="1" >
+            <range ratio="0.4" name="I" />
+            <range ratio="1" name="II" />
+        </rangeSet1>
+            
+   
+    </realManualTransmission>	
 
 	<realManualTransmission configFile="ASeries.xml" >
         <gears>
