@@ -4,6 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.4.0.9 ###
+	-- fixed Neutral not working with H-Shifter bug that was introduced with the last version 
+	-- more basegameConfigs thanks to Johny6210!! Much more basegame vehicles have RMT set up for them already now :)
 -- V 0.4.0.8 ###
 	-- change and compaction of inputAction adding 
 	-- all the overriding moved to rmtOverride now 
@@ -210,7 +213,7 @@ function realManualTransmission.onRegisterActionEvents(self, isActiveForInput)
 			if spec.gears ~= nil then
 				local actions = {"RMT_SELECT_GEAR_1", "RMT_SELECT_GEAR_2", "RMT_SELECT_GEAR_3", "RMT_SELECT_GEAR_4", "RMT_SELECT_GEAR_5", "RMT_SELECT_GEAR_6", "RMT_SELECT_GEAR_7", "RMT_SELECT_GEAR_8"}
 				for i = 1, #actions do
-					local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction[tostring(actions[i])], self, realManualTransmission[tostring(actions[i])], false, true, false, true, nil);
+					local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction[tostring(actions[i])], self, realManualTransmission[tostring(actions[i])], true, true, false, true, nil);
 					g_inputBinding:setActionEventTextVisibility(actionEventId, false)
 				end;			
 			end;	
