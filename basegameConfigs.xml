@@ -752,5 +752,62 @@
         </rangeSet2>
 		
     </realManualTransmission>
+	
+	<realManualTransmission configFile="stMax105.xml" >
+	
+        <gears>
+            <gear speed="9.83" name="1" />
+            <gear speed="15.45" name="2" />
+            <gear speed="19.52" name="3" />
+            <gear speed="28.77" name="4" />
+        </gears>
+		
+     	<reverser type="normal" > 
+			<ratios forward="1" reverse="1" />
+			<settings brakeAggressionBias="0.3" clutchTime="500" />
+		</reverser>	   
+        
+        <rangeSet1 powerShift="false" defaultRange="1" >  <!-- Stopping tractor before changing recommended, not possible with v0.4.0.9 -->
+            <range ratio="0.169" name="Frente" />
+            <range ratio="0.405" name="Normal" />
+			<range ratio="1" name="Rápida" />
+        </rangeSet1>
+		
+    </realManualTransmission>	
+	
+		
+	<realManualTransmission configFile="stMax150.xml" >
+	
+        <gears>
+            <gear speed="11.01" name="1" />
+            <gear speed="14.20" name="2" />
+            <gear speed="18.38" name="3" />
+            <gear speed="23.67" name="4" />
+			<gear speed="30.85" name="5" />
+			<gear speed="38.16" name="6" />
+        </gears>
+		
+     	<reverser type="normal"> 
+			<ratios forward="1" reverse="1.024" />
+			<settings brakeAggressionBias="0.3" clutchTime="300" />
+		</reverser>	   
+        
+        <rangeSet1 powerShift="false" defaultRange="2" hasNeutralPosition="false"> <!-- Stopping tractor before changing recommended, not possible with v0.4.0.9? -->
+            <range ratio="0.170" name="L" />
+            <range ratio="0.422" name="N" />
+            <range ratio="1" name="F" />
+		</rangeSet1>
+            
+        <rangeSet2 powerShift="true" defaultRange="2" hasNeutralPosition="false"> <!-- Over/Underdrive Function -->  <!-- rangeSet2 should be locked while driving backwards, not possible with v0.4.0.9? -->
+            <range ratio="0.8" name="-" />
+			 <range ratio="1" name="0" />
+			 <range ratio="1.2" name="+" >
+				<!--disableGears gears="6" disableType="lock" /--> <!-- Only lock if "F" in rangeSet1 selected, not possible with  v0.4.0.9? -->
+			</range>
+        </rangeSet2>
+				        
+    </realManualTransmission>
+	
+	
 
 </basegameConfigs>

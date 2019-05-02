@@ -4,6 +4,11 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.4.2.0 ###
+	-- added rangeAdjust where you can set up to automatically adjust the range when changing from one gear to another 
+	-- changed loadPercentage smoothing, now load increase if actual load is above 0.99 e.g. 1 is smoothed half as much as otherwise to increase reaction time when rev matching 
+-- V 0.4.1.0 ###
+	-- fixed gear up/down keys being the wrong way around 
 -- V 0.4.0.9 ###
 	-- fixed Neutral not working with H-Shifter bug that was introduced with the last version 
 	-- more basegameConfigs thanks to Johny6210!! Much more basegame vehicles have RMT set up for them already now :)
@@ -458,7 +463,7 @@ function realManualTransmission:onLoad(savegame)
 	local basegameConfigsXML = g_currentMission.rmtGlobals.basegameConfigsXML;
 	
 	if self.baseDirectory == "" then -- is no mod 
-		print(tostring(configFile[#configFile]).." is not a mod!");
+		print("RMT Debug: "..tostring(configFile[#configFile]).." is not a Mod.");
 		local i = 0;
 		while true do
 			local check = getXMLString(basegameConfigsXML, "basegameConfigs.realManualTransmission("..i..")#configFile");
@@ -521,7 +526,7 @@ function realManualTransmission:onLoad(savegame)
 		self.spec_motorized.motor.lowBrakeForceScale = 0;
 		
 		-- new smoothing tables 
-		spec.loadPercentageSmoothing = self:addSmoothingTable(30, 0);
+		spec.loadPercentageSmoothing = self:addSmoothingTable(20, 0);
 		
 		-- neutral variable 
 		spec.neutral = true;
@@ -914,6 +919,25 @@ function realManualTransmission:loadGears(xmlFile, key)
 		gear.mappedToGear = Utils.getNoNil(getXMLInt(xmlFile, key..i..")#mappedToGear"), i+1);
 		spec.gearMappings[gear.mappedToGear] = i+1;
 		
+		-- rangeAdjusts, if we want to adjust the range when switching gears 
+		local rangeAdjusts = {};
+		local r = 0;
+		while true do
+			local rangeAdjust = {};
+			rangeAdjust.from = getXMLInt(xmlFile, key..i..").rangeAdjust("..r..")#from");
+			rangeAdjust.range = getXMLInt(xmlFile, key..i..").rangeAdjust("..r..")#range");
+			rangeAdjust.rangeSetIndex = Utils.getNoNil(getXMLInt(xmlFile, key..i..").rangeAdjust("..r..")#rangeSetIndex"), 1);
+			if rangeAdjust.from == nil then
+				break;
+			else
+				table.insert(rangeAdjusts, rangeAdjust);
+			end;
+			r = r+1;
+		end;
+		if r ~= 0 then
+			gear.rangeAdjusts = rangeAdjusts;
+		end;
+		
 		-- insert gear to gears table 
 		table.insert(gears, gear);
 		i = i+1;
@@ -944,7 +968,7 @@ function realManualTransmission:processGearInputs(inputIndex, inputValue, isSequ
 		end;
 				
 		-- just select the gear we want to.. see if we get lockOut back 
-		local lockOut = self:selectGear(spec.currentGear - (1*dir), inputValue);
+		local lockOut = self:selectGear(spec.currentGear + (1*dir), inputValue);
 		
 		-- if we get locked out of the gear we want to shift in, try to shift down to the next gear and the next
 		-- to see if we can shift into the next allowed gear, stop if 1 is reached 
@@ -1210,6 +1234,9 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 				lockedOut = true;
 			end;
 		end;
+		
+		print("gear select");
+
 
 			
 		-- now check if clutch is pressed enough to allow gearshift or if gears can be shifted under power 
@@ -1217,11 +1244,28 @@ function realManualTransmission:selectGear(wantedGear, inputValue, mappingValue)
 			-- -1 means we want to go into neutral 
 			if wantedGear == -1 then 
 				spec.neutral = true;
+				spec.lastGear = spec.currentGear;
 			else
 				-- return wanted gear 
+				-- sometimes if we change gear we also want to adjust the range 
+				-- this is usually dependent on the previous gear we were in
+				if spec.gears[wantedGear].rangeAdjusts ~= nil then
+					print("we have range adjusts");
+					for _, rangeAdjust in pairs(spec.gears[wantedGear].rangeAdjusts) do
+						print("count");
+						print(tostring(rangeAdjust.from));
+						print(tostring(spec.lastGear));
+						if rangeAdjust.from == spec.lastGear then
+							self:selectRange(rangeAdjust.range, 1, 1)
+							print("selected range");
+						end;
+					end;
+				end;
+
 				if wantedGear ~= nil then
 					spec.currentGear = wantedGear;
 					spec.neutral = false; -- set neutral to false if we are in gear 
+					spec.lastGear = spec.currentGear;
 				end;
 			end;
 		end;
@@ -1338,6 +1382,8 @@ function realManualTransmission:onUpdate(dt)
 				local loadPercentageNoPTO = (self.spec_motorized.motor:getMotorAppliedTorque()-self.spec_motorized.motor:getMotorExternalTorque()) / math.max( self.spec_motorized.motor:getMotorAvailableTorque(), 0.0001)
 				--print(loadPercentageNoPTO);
 				
+				
+				
 				if spec.clutchPercent < 0.6 or spec.neutral then
 					-- if clutch is pressed or neutral, load percentage is calculated using wanted and actual RPM 
 					if (rpm / motor.maxRpm) < mAxisForward then
@@ -1350,7 +1396,13 @@ function realManualTransmission:onUpdate(dt)
 				-- actual load percentage 
 				self.spec_motorized.actualLoadPercentage = loadPercentage
 				
+				
 				-- smoothed load percentage 
+				-- if loadPercentage is 1, e.g. max load or clutch/neutral, we add the value twice to the smoothing table to half the smoothing for faster reaction time 
+				-- changed in V 0.4.2.0
+				if loadPercentage > 0.99 then
+					self:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
+				end;
 				local newAverage = self:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
 				self.spec_motorized.smoothedLoadPercentage = newAverage;			
 			
@@ -1361,6 +1413,12 @@ function realManualTransmission:onUpdate(dt)
 				
 				-- calculate engine brake 
 				local wantedEngineBrake =  (1 - (spec.currentWantedSpeed / (spec.maxSpeedPossible*1.1))) * spec.engineBrakeBase * spec.engineBrakeModifier * ((rpm / motor.maxRpm)^2) * ((spec.clutchPercent - 0.199)*1.25);
+				
+				
+				-- set lastGear to nil if we are in neutral and clutch is engaged 
+				if spec.clutchPercent > 0.9 and spec.neutral then
+					spec.lastGear = nil;
+				end;
 		
 
 				-- now find out if we are off-load and engine is in pushmode
