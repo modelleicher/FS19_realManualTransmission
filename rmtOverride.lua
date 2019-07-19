@@ -31,109 +31,124 @@ function newMotorUpdate(self, dt)
 		oldMotorUpdate(self, dt);	
 	else
 		
-		if next(vehicle.spec_motorized.differentials) ~= nil and vehicle.spec_motorized.motorizedNode ~= nil then
-			-- Only update the physics values if a physics simulation was performed
-			if g_physicsDtNonInterpolated > 0.0 then
-				local lastMotorRotSpeed = self.motorRotSpeed;
-				local lastDiffRotSpeed = self.differentialRotSpeed
-				self.motorRotSpeed, self.differentialRotSpeed, self.gearRatio = getMotorRotationSpeed(vehicle.spec_motorized.motorizedNode)
+			if next(vehicle.spec_motorized.differentials) ~= nil and vehicle.spec_motorized.motorizedNode ~= nil then
+				-- Only update the physics values if a physics simulation was performed
+				if g_physicsDtNonInterpolated > 0.0 then
+					local lastMotorRotSpeed = self.motorRotSpeed;
+					local lastDiffRotSpeed = self.differentialRotSpeed
+					self.motorRotSpeed, self.differentialRotSpeed, self.gearRatio = getMotorRotationSpeed(vehicle.spec_motorized.motorizedNode)
+					
+					
+					self.motorAvailableTorque, self.motorAppliedTorque, self.motorExternalTorque = getMotorTorque(vehicle.spec_motorized.motorizedNode)
 				
-				
-				self.motorAvailableTorque, self.motorAppliedTorque, self.motorExternalTorque = getMotorTorque(vehicle.spec_motorized.motorizedNode)
-			
 
-				local motorRotAcceleration = (self.motorRotSpeed - lastMotorRotSpeed) / (g_physicsDtNonInterpolated*0.001)
-				self.motorRotAcceleration = motorRotAcceleration
-				self.motorRotAccelerationSmoothed = 0.8 * self.motorRotAccelerationSmoothed + 0.2 * motorRotAcceleration
+					local motorRotAcceleration = (self.motorRotSpeed - lastMotorRotSpeed) / (g_physicsDtNonInterpolated*0.001)
+					self.motorRotAcceleration = motorRotAcceleration
+					self.motorRotAccelerationSmoothed = 0.8 * self.motorRotAccelerationSmoothed + 0.2 * motorRotAcceleration
 
-				local diffRotAcc = (self.differentialRotSpeed - lastDiffRotSpeed) / (g_physicsDtNonInterpolated*0.001)
-				self.differentialRotAcceleration = diffRotAcc
-				self.differentialRotAccelerationSmoothed = 0.8 * self.differentialRotAccelerationSmoothed + 0.2 * diffRotAcc
+					local diffRotAcc = (self.differentialRotSpeed - lastDiffRotSpeed) / (g_physicsDtNonInterpolated*0.001)
+					self.differentialRotAcceleration = diffRotAcc
+					self.differentialRotAccelerationSmoothed = 0.8 * self.differentialRotAccelerationSmoothed + 0.2 * diffRotAcc
 
-				--print(string.format("update rpms: %.2f %.2f acc: %.2f", self.motorRotSpeed*30/math.pi, self.differentialRotSpeed*self.gearRatio*30/math.pi, motorRotAcceleration))
+					--print(string.format("update rpms: %.2f %.2f acc: %.2f", self.motorRotSpeed*30/math.pi, self.differentialRotSpeed*self.gearRatio*30/math.pi, motorRotAcceleration))
+				end
+
+				self.requiredMotorPower = math.huge
+
+			else
+				local _, gearRatio = self:getMinMaxGearRatio()
+				self.differentialRotSpeed = WheelsUtil.computeDifferentialRotSpeedNonMotor(vehicle)
+				self.motorRotSpeed = math.max(self.differentialRotSpeed * gearRatio, 0)
+				self.gearRatio = gearRatio
 			end
 
-			self.requiredMotorPower = math.huge
-
-		else
-			local _, gearRatio = self:getMinMaxGearRatio()
-			self.differentialRotSpeed = WheelsUtil.computeDifferentialRotSpeedNonMotor(vehicle)
-			self.motorRotSpeed = math.max(self.differentialRotSpeed * gearRatio, 0)
-			self.gearRatio = gearRatio
-		end
-
-		local clampedMotorRpm = math.max(self.motorRotSpeed*30/math.pi, self.minRpm)
-		
-		
-		self.lastPtoRpm = clampedMotorRpm;
-		
-		-- modelleicher 
-		-- if clutch is pressed, motor RPM is not dependent on wheel speed anymore.. Instead, calculate motor RPM based on accelerator pedal input 
-		if vehicle.spec_realManualTransmission.clutchPercent < 0.999 or vehicle.spec_realManualTransmission.neutral then
-			local clutchPercent = vehicle.spec_realManualTransmission.clutchPercent;
-			if vehicle.spec_realManualTransmission.neutral then
-				clutchPercent = 0;
-			end;	
-			local accInput = 0
-			if vehicle.getAxisForward ~= nil then
-				accInput = math.max(0, vehicle:getAxisForward());
-			end;
 			
-			-- take hand throttle into account 
-			accInput = math.max(accInput, vehicle.spec_realManualTransmission.handThrottlePercent);
+			local clampedMotorRpm = math.max(self.motorRotSpeed*30/math.pi, self.minRpm)
 			
-			local wantedRpm = (self.maxRpm - self.minRpm) * accInput + self.minRpm;
-			local currentRpm = self.lastRealMotorRpm;
-			if currentRpm < wantedRpm then
-				currentRpm = math.min(currentRpm + 2 * dt, wantedRpm);  -- to do, do proper engine rpm increase calculation 
-			elseif currentRpm > wantedRpm then
-				currentRpm = math.max(currentRpm - 1 * dt, wantedRpm);
-			end;
 			
-			self.lowBrakeForceScale = 0 --(vehicle.spec_realManualTransmission.wantedLowBrakeForceScale * clutchPercent) + (0.0001 * (1-clutchPercent));
+			self.lastPtoRpm = clampedMotorRpm;
 			
-			--local multi = clutchPercent * 0.7;
-			if clutchPercent < 0.2 then
-				clampedMotorRpm = currentRpm;
+			-- modelleicher 
+			-- if clutch is pressed, motor RPM is not dependent on wheel speed anymore.. Instead, calculate motor RPM based on accelerator pedal input 
+			if vehicle.spec_realManualTransmission.clutchPercent < 0.999 or vehicle.spec_realManualTransmission.neutral then
+				local clutchPercent = vehicle.spec_realManualTransmission.clutchPercent;
+				if vehicle.spec_realManualTransmission.neutral then
+					clutchPercent = 0;
+				end;	
+				local accInput = 0
+				if vehicle.getAxisForward ~= nil then
+					accInput = math.max(0, vehicle:getAxisForward());
+				end;
+				
+				-- take hand throttle into account 
+				accInput = math.max(accInput, vehicle.spec_realManualTransmission.handThrottlePercent);
+				
+				local wantedRpm = (self.maxRpm - self.minRpm) * accInput + self.minRpm;
+				local currentRpm = self.lastRealMotorRpm;
+				if currentRpm < wantedRpm then
+					currentRpm = math.min(currentRpm + 2 * dt, wantedRpm);  -- to do, do proper engine rpm increase calculation 
+				elseif currentRpm > wantedRpm then
+					currentRpm = math.max(currentRpm - 1 * dt, wantedRpm);
+				end;
+				
+				self.lowBrakeForceScale = 0 --(vehicle.spec_realManualTransmission.wantedLowBrakeForceScale * clutchPercent) + (0.0001 * (1-clutchPercent));
+				
+				--local multi = clutchPercent * 0.7;
+				if clutchPercent < 0.2 then
+					clampedMotorRpm = currentRpm;
+				else
+					clampedMotorRpm = (clampedMotorRpm * ((clutchPercent-0.2)*1.25)) + (currentRpm * (1-((clutchPercent-0.2)*1.25)));
+				end;
+				--renderText(0.1, 0.2, 0.02, "clampedMotorRpm: "..tostring(clampedMotorRpm).." currentRpm: "..tostring(currentRpm).." wantedRpm: "..tostring(wantedRpm).." accInput: "..tostring(accInput));
 			else
-				clampedMotorRpm = (clampedMotorRpm * ((clutchPercent-0.2)*1.25)) + (currentRpm * (1-((clutchPercent-0.2)*1.25)));
+
+				self.lowBrakeForceScale = 0 --vehicle.spec_realManualTransmission.wantedLowBrakeForceScale;
+				--clampedMotorRpm = math.max(self.motorRotSpeed*30/math.pi, ptoRpm, self.minRpm)
+				
+				-- get clutch RPM shut off motor if RPM gets too low , disable "auto clutch" of FS
+				local clutchRpm = math.abs(self:getClutchRotSpeed() *  9.5493);
+				
+				if clutchRpm < self.minRpm and clutchRpm > 0 then
+					clampedMotorRpm = (self.lastRealMotorRpm * 0.7) + (clutchRpm * 0.3);
+				end;
+				--renderText(0.1, 0.3, 0.02, "clutchRpm: "..tostring(clutchRpm));
+
 			end;
-			--renderText(0.1, 0.2, 0.02, "clampedMotorRpm: "..tostring(clampedMotorRpm).." currentRpm: "..tostring(currentRpm).." wantedRpm: "..tostring(wantedRpm).." accInput: "..tostring(accInput));
-		else
 			
-			self.lowBrakeForceScale = 0 --vehicle.spec_realManualTransmission.wantedLowBrakeForceScale;
-			--clampedMotorRpm = math.max(self.motorRotSpeed*30/math.pi, ptoRpm, self.minRpm)
 			
-			-- get clutch RPM shut off motor if RPM gets too low , disable "auto clutch" of FS
-			local clutchRpm = math.abs(self:getClutchRotSpeed() *  9.5493);
-			
-			if clutchRpm < self.minRpm then
-				clampedMotorRpm = (self.lastRealMotorRpm * 0.7) + (clutchRpm * 0.3);
+			if clampedMotorRpm < 500 then -- to do, add stall rpm variable 
+				-- stall the engine 
+				vehicle.spec_realManualTransmission.stallTimer = math.max(vehicle.spec_realManualTransmission.stallTimer - dt, 0);
+				if vehicle.spec_realManualTransmission.stallTimer == 0 then
+					vehicle:stopMotor()
+				end;
+			else
+				vehicle.spec_realManualTransmission.stallTimer = 500;
 			end;
-			--renderText(0.1, 0.3, 0.02, "clutchRpm: "..tostring(clutchRpm));
+			
+
+			clampedMotorRpm = math.max(clampedMotorRpm, 500);
+			
+			-- stupid smoothing 
+			if clampedMotorRpm < vehicle.spec_realManualTransmission.lastRealRpm * 0.73 or clampedMotorRpm > vehicle.spec_realManualTransmission.lastRealRpm * 1.27 then
+				vehicle.spec_realManualTransmission.lastRealRpm = (vehicle.spec_realManualTransmission.lastRealRpm * 0.9) + (clampedMotorRpm * 0.1);
+			else
+				vehicle.spec_realManualTransmission.lastRealRpm = (vehicle.spec_realManualTransmission.lastRealRpm * 0.1) + (clampedMotorRpm * 0.9);
+			end;
+			
+
+
+		self:setLastRpm(vehicle.spec_realManualTransmission.lastRealRpm)
+		
+		--self.equalizedMotorRpm = vehicle:getSmoothingTableAverage(vehicle.spec_realManualTransmission.clientRpmSmoothing, clampedMotorRpm);
+
+		if self.vehicle.isServer then -- self.equalizedMotorRpm gets synchronized somewhere to the clients.. so only server-side this 
+			self.equalizedMotorRpm = (self.equalizedMotorRpm * 0.9) + ( 0.1 * vehicle.spec_realManualTransmission.lastRealRpm);
 		end;
-		
-		if clampedMotorRpm < 500 then -- to do, add stall rpm variable 
-			-- stall the engine 
-			vehicle.spec_realManualTransmission.stallTimer = math.max(vehicle.spec_realManualTransmission.stallTimer - dt, 0);
-			if vehicle.spec_realManualTransmission.stallTimer == 0 then
-				vehicle:stopMotor()
-			end;
-		else
-			vehicle.spec_realManualTransmission.stallTimer = 500;
-		end;
-		
-		clampedMotorRpm = math.max(clampedMotorRpm, 500);
-		
-		-- stupid smoothing 
-		vehicle.spec_realManualTransmission.lastRealRpm = (vehicle.spec_realManualTransmission.lastRealRpm * 0.1) + (clampedMotorRpm * 0.9);
-		
+
 		-- end modelleicher 
 		--
 
-		self:setLastRpm(vehicle.spec_realManualTransmission.lastRealRpm)
-
-		self.equalizedMotorRpm = (self.equalizedMotorRpm * 0.8) + ( 0.2 * vehicle.spec_realManualTransmission.lastRealRpm);
 	end;
 end;
 VehicleMotor.update = newMotorUpdate;

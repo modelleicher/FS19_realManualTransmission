@@ -43,6 +43,7 @@ function rmtMenu:RMT_MOUSE_BUTTON(actionName, inputValue)
 				else
 					self.spec_realManualTransmission[button.indexString] = button.state;
 				end;
+				self:synchMenuInput(button.synchId, button.state);
 			end;
 		end;
 		for _, checkBox in pairs(self.spec_rmtMenu.checkBoxes) do
@@ -53,6 +54,7 @@ function rmtMenu:RMT_MOUSE_BUTTON(actionName, inputValue)
 				else
 					self.spec_realManualTransmission[checkBox.indexString] = checkBox.state;
 				end;
+				self:synchMenuInput(checkBox.synchId, checkBox.state);
 			end;
 		end;
 		self.spec_rmtMenu.mouseHeldDown = true;
@@ -68,6 +70,32 @@ function rmtMenu:RMT_MOUSE_BUTTON(actionName, inputValue)
 	end;
 end;
 
+function rmtMenu:synchMenuInput(synchId, state, noEventSend)
+	synchMenuInputEvent.sendEvent(self, synchId, state, noEventSend);
+	print("synchMenuInput: "..tostring(synchId).." "..tostring(state));
+	if self.isServer then
+		if synchId ~= nil and state ~= nil then
+			for _, button in pairs(self.spec_rmtMenu.buttons) do
+				if button.synchId == synchId then
+					if button.indexTable ~= nil then
+						button.indexTable[button.indexString] = state;
+					else
+						self.spec_realManualTransmission[button.indexString] = state;
+					end;
+				end;
+			end;
+			for _, checkBox in pairs(self.spec_rmtMenu.checkBoxes) do 
+				if checkBox.synchId == synchId then
+					if checkBox.indexTable ~= nil then
+						checkBox.indexTable[checkBox.indexString] = state;
+					else
+						self.spec_realManualTransmission[checkBox.indexString] = state;
+					end;
+				end;
+			end;
+		end;
+	end;
+end;
 -- add checkBox function 
 -- name = name, text is text shown next to checkBox.. pos and size is self explanatory 
 -- indexString is the string value for the table index of the variable that is changing 
@@ -94,6 +122,9 @@ function rmtMenu:addCheckBox(name, text, sizeX, sizeY, posX, posY, indexString, 
 	
 	checkBox.state = checkBox.indexTable[indexString];
 	
+	self.spec_rmtMenu.synchIds = self.spec_rmtMenu.synchIds + 1;
+	checkBox.synchId = self.spec_rmtMenu.synchIds;
+
 	table.insert(self.spec_rmtMenu.checkBoxes, checkBox);	
 end;
 
@@ -114,8 +145,11 @@ function rmtMenu:addButton(name, text, sizeX, sizeY, posX, posY, indexString, in
 	if indexTable ~= nil then
 		button.indexTable = indexTable;
 	end;
-			
-		
+	
+
+	self.spec_rmtMenu.synchIds = self.spec_rmtMenu.synchIds + 1;
+	checkBox.synchId = self.spec_rmtMenu.synchIds;	
+
 	button.indexString = indexString;
 	table.insert(self.spec_rmtMenu.buttons, button);
 end;
@@ -123,6 +157,7 @@ end;
 function rmtMenu:onLoad(savegame)
 	self.addCheckBox = rmtMenu.addCheckBox;
 	self.addButton = rmtMenu.addButton;
+	self.synchMenuInput = rmtMenu.synchMenuInput;
 	
 	self.spec_rmtMenu = {};
 	
@@ -135,6 +170,7 @@ function rmtMenu:onLoad(savegame)
 		spec.hud = {};
 	end;
 
+	spec.synchIds = 0;
 end;
 function rmtMenu:onPostLoad(savegame)
 	if self.hasRMT and savegame ~= nil then

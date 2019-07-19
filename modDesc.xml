@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="42">
+<modDesc descVersion="44">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.4.0.9</version>
+    <version>0.5.0.7</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -57,11 +57,18 @@
 		
 	</l10n>
 	
-    <multiplayer supported="false"/> <!-- NOT EVENTS YET, no synch yet -->
+    <multiplayer supported="true"/> 
     <extraSourceFiles>
         <sourceFile filename="registerRMT.lua"/>
         <sourceFile filename="rmtMenuMain.lua"/>
         <sourceFile filename="rmtOverride.lua"/>
+        <sourceFile filename="events/processClutchInputEvent.lua"/>
+        <sourceFile filename="events/processGearInputsEvent.lua"/>
+        <sourceFile filename="events/processRangeInputsEvent.lua"/>
+        <sourceFile filename="events/selectReverserEvent.lua"/>
+        <sourceFile filename="events/setHandbrakeEvent.lua"/>
+        <sourceFile filename="events/synchGearsAndRangesEvent.lua"/>
+        <sourceFile filename="events/synchMenuInputEvent.lua"/>
     </extraSourceFiles>
 	
 	
