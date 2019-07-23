@@ -287,7 +287,7 @@ function realManualTransmission:processClutchInput(inputValue, noEventSend)
 	processClutchInputEvent.sendEvent(self, inputValue, noEventSend);
 	local spec = self.spec_realManualTransmission;
 	--print("processClutchInput: "..tostring(inputValue));
-	if self.isServer then
+	--if self.isServer then
 		if inputValue == 1 then 
 			spec.automaticClutch.wantOpen = true; 
 			spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
@@ -299,7 +299,7 @@ function realManualTransmission:processClutchInput(inputValue, noEventSend)
 				spec.automaticClutch.preventClosing = false;
 			end;
 		end;
-	end;
+	--end;
 end;
 
 -- direct gear selection 
@@ -466,11 +466,26 @@ end;
 
 -- button to toggle RMT on or off
 function realManualTransmission:RMT_TOGGLE_ONOFF(actionName, inputValue)
-	if self.spec_realManualTransmission ~= nil then
-		if self.hasRMT then
-			self.rmtIsOn = not self.rmtIsOn;
+	self:processToggleOnOff(nil, true);
+end;
+
+function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSend)
+	
+	if self.spec_realManualTransmission ~= nil and self.hasRMT then
+		if isUserInput and self.spec_realManualTransmission.disableTurningOff then
+			-- TO DO: Show message that disabling RMT was disabled on the server/savegame.
+		else
+			if state ~= nil then
+				self.rmtIsOn = state;
+			else
+				self.rmtIsOn = not self.rmtIsOn;
+				state = self.rmtIsOn;
+			end;
+			processToggleOnOffEvent.sendEvent(self, state, noEventSend);
 		end;
+		
 	end;
+
 end;
 
 -- using tables and average values to smooth stuff 
@@ -523,6 +538,7 @@ function realManualTransmission:onLoad(savegame)
 	self.checkRangeLockOut = realManualTransmission.checkRangeLockOut;
 	self.processClutchInput = realManualTransmission.processClutchInput;
 	self.synchGearsAndRanges = realManualTransmission.synchGearsAndRanges;
+	self.processToggleOnOff = realManualTransmission.processToggleOnOff;
 	
 	self.hasRMT = false;
 	self.rmtIsOn = false;
@@ -734,6 +750,7 @@ function realManualTransmission:onLoad(savegame)
 
 		--
 		--
+		spec.disableTurningOff = false; -- turn is variable to true in order to disable the ability to turn RMT on/off via Button 
 		
 		
 		spec.synchClutchInputDirtyFlag = self:getNextDirtyFlag()
@@ -1126,6 +1143,7 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, wantedNe
 		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
 		spec.automaticClutch.wantedRange = wantedRange; -- store wantedGear for later when clutch is open 
 		spec.automaticClutch.rangeSetIndex = rangeSetIndex; -- store wantedGear for later when clutch is open 
+		print("store: "..tostring(wantedRange));
 	end;				
 	
 		-- if the rangeSet has a neutral position and we have buttonReleaseNeutral active, we want to turn into neutral 
@@ -1140,16 +1158,15 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 	local spec = self.spec_realManualTransmission;
 	local lockedOut = false;
 	
+	
 	-- check if wantedGear is not -1, -1 means we want to set it to neutral 
 	if wantedGear ~= -1 then
 		-- now check if wantedGear isn't the actual gear we want, in case we had a mappingValue assigned to the selectGear call 
 		if mappingValue ~= nil and spec.gearMappings[mappingValue] ~= nil then
 			wantedGear = spec.gearMappings[mappingValue];
 		end;
-		
 		-- now make sure that wantedGear isn't above our highest gear 
 		wantedGear = math.max(1, math.min(wantedGear, spec.numberOfGears));
-		
 	end;
 	
 	-- if wantedGear is not nil yet, we are pretty sure wantedGear is valid and the gear we want 
@@ -1178,8 +1195,6 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 	end;
 	
 	--print("gear select");
-
-
 		
 	-- now check if clutch is pressed enough to allow gearshift or if gears can be shifted under power 
 	if spec.clutchPercent < 0.4 or spec.gearsPowershift then
@@ -1220,7 +1235,7 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 		spec.automaticClutch.wantOpen = true; 
 		spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
 		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
-		spec.automaticClutch.wantedGear = wantedGear; -- store wantedGear for later when clutch is open 				
+		spec.automaticClutch.wantedGear = wantedGear; -- store wantedGear for later when clutch is open 		
 	end;
 	
 	-- if inputValue is 0 and we have buttonReleaseNeutral active (automatically go back to neutral if you stop "pressing" the gear button
@@ -1596,7 +1611,7 @@ function realManualTransmission:onUpdate(dt)
 						local ratio = 1; 
 						-- change the gear or range depending on which we selected 
 						if spec.automaticClutch.wantedGear ~= nil then
-							self:selectGear(spec.automaticClutch.wantedGear, 1);
+							self:selectGear(spec.automaticClutch.wantedGear);
 							-- the further the new ratio is away from the current ratio, the smaller the ratio number gets 
 							if spec.lastGearRatio < spec.wantedGearRatio then 
 								ratio = spec.lastGearRatio / spec.wantedGearRatio;

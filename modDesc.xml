@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="44">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.5.0.7</version>
+    <version>0.5.0.9</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -69,6 +69,7 @@
         <sourceFile filename="events/setHandbrakeEvent.lua"/>
         <sourceFile filename="events/synchGearsAndRangesEvent.lua"/>
         <sourceFile filename="events/synchMenuInputEvent.lua"/>
+        <sourceFile filename="events/processToggleOnOffEvent.lua"/>
     </extraSourceFiles>
 	
 	
