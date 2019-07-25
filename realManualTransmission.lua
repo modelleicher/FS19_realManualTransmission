@@ -4,6 +4,13 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.5.1.0 ###
+	-- fixed Range Lockout Bug which made it impossible to shift ranges in some vehicles (also caused an error) 
+	-- fixed clutch not working Bug 
+-- V 0.5.0.9 ###
+	-- MP Beta 2, added rest of the events, fixed things, everything should work in MP now..
+-- V 0.5.0.4 ### 
+	-- MP Beta, changed lots of stuff around to make MP compatabilty work, added events
 -- V 0.4.2.0 ###
 	-- added rangeAdjust where you can set up to automatically adjust the range when changing from one gear to another 
 	-- changed loadPercentage smoothing, now load increase if actual load is above 0.99 e.g. 1 is smoothed half as much as otherwise to increase reaction time when rev matching 
@@ -267,7 +274,9 @@ end;
 -- to do: implement maxSpeed 
 
 function realManualTransmission:UIP_SYNCH_REVERSER(actionName, inputValue)
+	--print("UIP_SYNCH_REVERSER called");
 	if self.spec_realManualTransmission.reverser ~= nil then
+		--print("UIP_SYNCH_REVERSER - reverser not nil");
 		if actionName == "RMT_FORWARD" then
 			self:selectReverser(true);
 		elseif actionName == "RMT_REVERSE" then
@@ -287,19 +296,17 @@ function realManualTransmission:processClutchInput(inputValue, noEventSend)
 	processClutchInputEvent.sendEvent(self, inputValue, noEventSend);
 	local spec = self.spec_realManualTransmission;
 	--print("processClutchInput: "..tostring(inputValue));
-	--if self.isServer then
-		if inputValue == 1 then 
-			spec.automaticClutch.wantOpen = true; 
-			spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
-			spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
-			spec.automaticClutch.wantedGear = nil; -- no wanted gear, we just want to open the clutch  
-			spec.automaticClutch.preventClosing = true;
-		elseif inputValue == 0 then
-			if not spec.automaticClutch.openingAtLowRPMTriggered then -- check if we don't hold the clutch open due to minRpm automatic opening already, in that case don't close it again.
-				spec.automaticClutch.preventClosing = false;
-			end;
+	if inputValue == 1 then 
+		spec.automaticClutch.wantOpen = true; 
+		spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
+		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
+		spec.automaticClutch.wantedGear = nil; -- no wanted gear, we just want to open the clutch  
+		spec.automaticClutch.preventClosing = true;
+	elseif inputValue == 0 then
+		if not spec.automaticClutch.openingAtLowRPMTriggered then -- check if we don't hold the clutch open due to minRpm automatic opening already, in that case don't close it again.
+			spec.automaticClutch.preventClosing = false;
 		end;
-	--end;
+	end;
 end;
 
 -- direct gear selection 
@@ -312,10 +319,8 @@ function realManualTransmission:UIP_SYNCH_GEARS(actionName, inputValue)
 	local stringEndNumber = tonumber(actionName:sub(actionName:len())) -- convert the actionName string to a gear number 
 	if stringEndNumber ~= nil then
 		gearValue = stringEndNumber;
-		--print("stringEndNumber: "..tostring(stringEndNumber));
 		if inputValue == 0 and spec.buttonReleaseNeutral then -- if actionName is neutral or we released the gear-button, go neutral 
 			gearValue = -1;
-			--print("-1");
 		end;	
 	end;
 
@@ -347,6 +352,9 @@ function realManualTransmission:processGearInputs(gearValue, sequentialDir, noEv
 	-- send the event here, this is the last clienct & server function 
 	processGearInputsEvent.sendEvent(self, gearValue, sequentialDir, noEventSend);
 	-- now start the server-stuff 
+	
+	--print("process Gear Inputs called");
+	
 	if self.isServer then
 		local spec = self.spec_realManualTransmission;
 		if sequentialDir == 0 then -- we called this via direct selection, so we select the gear or range directly 
@@ -376,6 +384,7 @@ function realManualTransmission:processGearInputs(gearValue, sequentialDir, noEv
 end;
 
 function realManualTransmission:UIP_SYNCH_RANGES(actionName, inputValue)
+	--print("UIP_SYNCH_RANGES "..tostring(actionName).." - "..tostring(inputValue));
 	local spec = self.spec_realManualTransmission;
 	local dir = 0;
 	local index = 1;
@@ -400,6 +409,7 @@ function realManualTransmission:UIP_SYNCH_RANGES(actionName, inputValue)
 	end;
 	
 	if dir ~= 0 then -- only continue if something changed 
+		--print("UIP_SYNCH_RANGES dir: "..tostring(dir).." index:"..tostring(index));
 		if not spec.switchGearRangeMapping then
 			self:processRangeInputs(dir, index, 0);
 		else
@@ -411,6 +421,7 @@ end;
 function realManualTransmission:processRangeInputs(up, index, force, noEventSend)
 	-- send the event here, this is the last clienct & server function 
 	processRangeInputsEvent.sendEvent(self, up, index, force, noEventSend);
+	--print("process range inputs");
 	-- now start the server-stuff 
 	if self.isServer then
 		local spec = self.spec_realManualTransmission;
@@ -431,7 +442,7 @@ function realManualTransmission:processRangeInputs(up, index, force, noEventSend
 		-- make sure our wantedRange is between min and max range we have 
 		wantedRange = math.max(1, math.min(wantedRange, rangeSet.numberOfRanges));
 		
-		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(index, other1, other2);
+		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(wantedRange, index, other1, other2);
 		
 		if lockOutTrue then
 			wantedRange = nil;
@@ -1073,14 +1084,20 @@ function realManualTransmission:checkRangeLockOut(wantedRange, rangeSet, other1,
 	
 	local lockOutTrue = false;
 	local wantedNeutral = false;
+	
+	--print("checkRangeLockOut");
+	--print("strRangeSet1: "..tostring(strRangeSet1).." strRangeSet2: "..tostring(strRangeSet2).." strRangeSet3: "..tostring(strRangeSet3));
+	--print("strCurrentRange1: "..tostring(strCurrentRange1).." strCurrentRange2: "..tostring(strCurrentRange2).." strCurrentRange3: "..tostring(strCurrentRange3));
 
 	-- check if we can shift into this range or if it is disabled in the gear we are in 
-	if spec[strRangeSet1].ranges[wantedRange].disableGearsTable ~= nil and spec[strRangeSet1].disableGearsTable[tostring(spec.currentGear)] then 
-		if spec[strRangeSet1].ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
-			lockOutTrue = true;
-		elseif spec[strRangeSet1].ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
-			wantedNeutral = true;
-		end;		
+	if spec[strRangeSet1] ~= nil then
+		if spec[strRangeSet1].ranges[wantedRange].disableGearsTable ~= nil and spec[strRangeSet1].disableGearsTable[tostring(spec.currentGear)] then 
+			if spec[strRangeSet1].ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
+				lockOutTrue = true;
+			elseif spec[strRangeSet1].ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
+				wantedNeutral = true;
+			end;		
+		end;
 	end;
 	
 	-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
@@ -1143,7 +1160,7 @@ function realManualTransmission:selectRange(wantedRange, rangeSetIndex, wantedNe
 		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
 		spec.automaticClutch.wantedRange = wantedRange; -- store wantedGear for later when clutch is open 
 		spec.automaticClutch.rangeSetIndex = rangeSetIndex; -- store wantedGear for later when clutch is open 
-		print("store: "..tostring(wantedRange));
+		--print("store: "..tostring(wantedRange));
 	end;				
 	
 		-- if the rangeSet has a neutral position and we have buttonReleaseNeutral active, we want to turn into neutral 
@@ -1588,7 +1605,8 @@ function realManualTransmission:onUpdate(dt)
 		
 			
 			-- calculating the automatic clutch 
-			if spec.useAutomaticClutch or spec.reverser ~= nil and spec.reverser.type == "normal" then
+			--if spec.useAutomaticClutch or spec.reverser ~= nil and spec.reverser.type == "normal" then
+			if spec.automaticClutch ~= nil then
 			
 				if spec.automaticClutch.wantOpen then -- currently opening 
 					-- remove from opening timer 
