@@ -4,6 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.5.1.1 ###
+	-- fixed MP bug where RMT of your vehicle was controlled by other people too
+	-- possibly fixed joining synch bug which locks up RMT in some cases 
 -- V 0.5.1.0 ###
 	-- fixed Range Lockout Bug which made it impossible to shift ranges in some vehicles (also caused an error) 
 	-- fixed clutch not working Bug 
@@ -162,13 +165,13 @@ function realManualTransmission.registerEventListeners(vehicleType)
 end;
 
 -- actionEvent stuffs.. (this one is called each time the vehicle is entered)
-function realManualTransmission.onRegisterActionEvents(self, isActiveForInput)
+function realManualTransmission.onRegisterActionEvents(self, isActiveForInput, isActiveForInputIgnoreSelection)
 	local spec = self.spec_realManualTransmission;
 	spec.actionEvents = {}; -- needs this. Farmcon Example didn't have this. Doesn't work without this though.. 
 	self:clearActionEventsTable(spec.actionEvents); -- not sure if we need to clear the table now that we just created it. I suppose you could create the table in onLoad, then it makes more sense
 
 	-- add the actionEvents if vehicle is ready to have Inputs
-	if  self:getIsActive() then
+	if isActiveForInputIgnoreSelection then
 		-- non-specific keybindings, we want to use those even in vehicles without RMT 
 		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_TOGGLE_ONOFF, self, realManualTransmission.RMT_TOGGLE_ONOFF, false, true, false, true, nil);
 		g_inputBinding:setActionEventTextVisibility(actionEventId, false)	
@@ -1805,23 +1808,31 @@ end;
 
 
 function realManualTransmission:onReadStream(streamId, connection)
-	local currentGear = Utils.getNoNil(streamReadInt8(streamId), 1);
-	local currentRange1 = Utils.getNoNil(streamReadInt8(streamId), 1);
-	local currentRange2 = Utils.getNoNil(streamReadInt8(streamId), 1);
-	local currentRange3 = Utils.getNoNil(streamReadInt8(streamId), 1);
-	local neutral = Utils.getNoNil(streamReadBool(streamId), false);
-	self:synchGearsAndRanges(currentGear, currentRange1, currentRange2, currentRange3, neutral, true);
-	--print("onReadStream called");
+	if self.hasRMT then
+		local isOn = Utils.getNoNil(streamReadBool(streamId), false);
+		local currentGear = Utils.getNoNil(streamReadInt8(streamId), 1);
+		local currentRange1 = Utils.getNoNil(streamReadInt8(streamId), 1);
+		local currentRange2 = Utils.getNoNil(streamReadInt8(streamId), 1);
+		local currentRange3 = Utils.getNoNil(streamReadInt8(streamId), 1);
+		local neutral = Utils.getNoNil(streamReadBool(streamId), false);
+		self.rmtIsOn = isOn;
+		self:synchGearsAndRanges(currentGear, currentRange1, currentRange2, currentRange3, neutral, true);
+	end;
+		--print("onReadStream called");
 end;
 
 function realManualTransmission:onWriteStream(streamId, connection)
 	local spec = self.spec_realManualTransmission;
 	
-	streamWriteInt8(streamId, Utils.getNoNil(spec.currentGear, 1));
-	streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange1, 1));
-	streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange2, 1));
-	streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange3, 1));
-	streamWriteBool(streamId, Utils.getNoNil(spec.neutral, false));
+	if self.hasRMT then
+		streamWriteBool(streamId, Utils.getNoNil(self.rmtIsOn, false));
+	
+		streamWriteInt8(streamId, Utils.getNoNil(spec.currentGear, 1));
+		streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange1, 1));
+		streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange2, 1));
+		streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange3, 1));
+		streamWriteBool(streamId, Utils.getNoNil(spec.neutral, false));
+	end;
 	--print("onWriteStream called");
 end;
 
