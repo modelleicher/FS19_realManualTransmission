@@ -4,6 +4,8 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.5.1.3 ###
+	-- fixed reverser naming inconsistency in hud 
 -- V 0.5.1.2 ###
 	-- fixed Reverser not working when RMT is off 
 	-- added automatic range matching 

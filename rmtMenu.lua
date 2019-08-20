@@ -283,7 +283,7 @@ function rmtMenu:onDraw()
 					else	
 						revString = revString.."R";
 						if fb.reverser.wantForward then
-							revString = revString.." ->V";
+							revString = revString.." ->F";
 						end;
 					end;
 					renderText(x, y, 0.02, revString);
