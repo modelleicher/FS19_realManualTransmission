@@ -14,6 +14,7 @@ Basic Features (as of right now):
 - up to 3 different rangeSets
 - reverser/shuttle
 - powershiftable ranges and gears
+- automatic range matching (like John Deere PowerQuad for example)
 
 
 # How do I play this? 
@@ -23,6 +24,8 @@ There is also an ingame Settings Menu (you have to map the key to open it) where
 I suggest you get the sample-mods from this repository as well to try out gearbox. Those are basegame vehicles that I have added Transmission Configs and edited the sound of, so they have an actual load-sound.
 But RMT also adds transmission configs to some of the basegame vehicles. (As of right now, Fiat 1300dt, Valtra A Series and John Deere 6M)
 In order to use the transmission with a vehicle it has to have a transmission config.
+There are RMT-ready XML's in the old MR-Database. (There's a RMT category)
+https://xmldb.tlg-webservice.de/uploads
 
 
 # How do I add a transmission Config to a Mod?
@@ -33,6 +36,11 @@ I will add a Tutorial on how to add transmission at a later date as right now th
 
 
 # Whats the future for this Mod, what are the plans? 
+UPDATE!
+The basics are all working. The clutch is still not how I wanted it to be (sorry to all of you that stall their engines a lot.. Thats not how its supposed to be I know).
+Currently I'm working on fixing the last few Multiplayer Bugs, overall the script is Multiplayer-Ready now, but it is still a big glitchy sometimes. 
+
+-- original Text
 Well.. The initial goal was to get a manual analog clutch and gears working in FS19. That is working, altough I am still not happy with the clutch.
 So for right now, the next thing to add is Multiplayer support. After that, we'll see. I was thinking of a "fully automatic" version, e.g. it shifts for you and all, but thats almost an entire script on its own if it should shift like a real driver would shift.
 There is also the addition of automatic gearboxes like some of the modern tractors have. Or maybe better simulation of CVT transmissions.. Issue though is, that I never have driven any modern tractor, thus I don't really know how the transmissions feel and operate. So I'm not sure if I have enough knowledge to tackle that.
