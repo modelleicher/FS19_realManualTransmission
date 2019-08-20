@@ -4,6 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.5.1.2 ###
+	-- fixed Reverser not working when RMT is off 
+	-- added automatic range matching 
 -- V 0.5.1.1 ###
 	-- fixed MP bug where RMT of your vehicle was controlled by other people too
 	-- possibly fixed joining synch bug which locks up RMT in some cases 
@@ -495,6 +498,21 @@ function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSe
 				self.rmtIsOn = not self.rmtIsOn;
 				state = self.rmtIsOn;
 			end;
+			-- if we switched RMT off, reset a few values
+			if not self.rmtIsOn then
+				-- reset gear ratios 
+				self.spec_motorized.motor.minForwardGearRatio = self.spec_realManualTransmission.minForwardGearRatioBackup;
+				self.spec_motorized.motor.maxForwardGearRatio = self.spec_realManualTransmission.maxForwardGearRatioBackup;
+		
+				self.spec_motorized.motor.minBackwardGearRatio = self.spec_realManualTransmission.minBackwardGearRatioBackup;
+				self.spec_motorized.motor.maxBackwardGearRatio= self.spec_realManualTransmission.maxBackwardGearRatioBackup;	
+				
+				-- reset low brakeforce 
+				self.spec_motorized.motor.lowBrakeForceScale = self.spec_realManualTransmission.lowBrakeForceScaleBackup;
+				
+				-- reset driving direction
+				self.spec_drivable.reverserDirection = 1;
+			end;
 			processToggleOnOffEvent.sendEvent(self, state, noEventSend);
 		end;
 		
@@ -918,6 +936,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 		
 		spec.finalRatio = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#finalRatio"), 1);
 		spec.switchGearRangeMapping = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#switchGearRangeMapping"), false);
+		spec.autoRangeMatching = Utils.getNoNil(getXMLBool(self.xmlFile, key.."realManualTransmission("..i..")#autoRangeMatching"), false);
 
 end;
 
@@ -1178,6 +1197,8 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 	local spec = self.spec_realManualTransmission;
 	local lockedOut = false;
 	
+	local gearChangeSuccess = false;
+	
 	
 	-- check if wantedGear is not -1, -1 means we want to set it to neutral 
 	if wantedGear ~= -1 then
@@ -1222,6 +1243,7 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 		if wantedGear == -1 then 
 			spec.neutral = true;
 			spec.lastGear = spec.currentGear;
+			gearChangeSuccess = true;
 		else
 			-- return wanted gear 
 			-- sometimes if we change gear we also want to adjust the range 
@@ -1243,8 +1265,58 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 				spec.currentGear = wantedGear;
 				spec.neutral = false; -- set neutral to false if we are in gear 
 				spec.lastGear = spec.currentGear;
+				gearChangeSuccess = true;
 			end;
 		end;
+	end;
+	
+	-- check if there is automatic range matching  
+	if gearChangeSuccess and not spec.neutral then 
+		if spec.autoRangeMatching then
+			-- get the current actual speed 
+			local currentSpeed = self.lastSpeed*3600;
+			local rangeSet = spec.rangeSet1;
+			local lastClosestTo1 = 0;
+			local idealRange = nil;
+			
+			
+			-- TO DO, FIX THIS UGLY CODE 
+			local rangeRatio = 1;
+			if spec.rangeSet2 ~= nil then
+				rangeRatio = rangeRatio * spec.rangeSet2.ranges[spec.currentRange2].ratio;
+			end;
+			if spec.rangeSet3 ~= nil then	
+				rangeRatio = rangeRatio * spec.rangeSet3.ranges[spec.currentRange3].ratio;
+			end;			
+			-- 
+			
+			-- go through all the ranges, see which one matches the closest to the current speed 
+			for i = 1, rangeSet.numberOfRanges do 
+			
+				-- first, get the max speed in the possible range 
+				local speedMax = spec.gears[spec.currentGear].speed * rangeSet.ranges[i].ratio * rangeRatio * spec.finalRatio;
+				-- now calculate the min speed in that possible range 
+				local speedMin = speedMax * (self.spec_motorized.motor.minRpm / self.spec_motorized.motor.maxRpm);
+				-- now get the average speed
+				local speedAverage = (speedMin + speedMax) / 2;
+				
+				-- now calculate how far away we are from the current speed 
+				local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
+				
+				--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference);
+				-- if the current difference is smaller than the last closest to 1, we have a new closest range 
+				if difference > lastClosestTo1 then
+					idealRange = i; -- our new ideal range is 1
+					lastClosestTo1 = difference; -- our new closestTo1 is our difference 
+				end;
+			end;
+			
+			if idealRange ~= nil then
+				self:processRangeInputs(1, 1, idealRange);
+			end;
+					
+		end;
+	
 	end;
 	
 	-- now for the automatic clutch 
@@ -1303,12 +1375,12 @@ function realManualTransmission:onUpdate(dt)
 
 		
 		-- check if we are a hired worker, turn rmt off if worker is hired 
-		if self.spec_aiVehicle ~= nil then
+		if self.spec_aiVehicle ~= nil then -- V 0.5.1.2 change, use function with event 
 			if self.spec_aiVehicle.isActive and self.rmtIsOnBackup == nil then
 				self.rmtIsOnBackup = self.rmtIsOn;
-				self.rmtIsOn = false;
+				self:processToggleOnOff(false, nil, nil);  
 			elseif not self.spec_aiVehicle.isActive and self.rmtIsOnBackup ~= nil then
-				self.rmtIsOn = self.rmtIsOnBackup;
+				self:processToggleOnOff(self.rmtIsOnBackup, nil, nil);
 				self.rmtIsOnBackup = nil;
 			end;
 		end;	
@@ -1769,22 +1841,6 @@ function realManualTransmission:onUpdate(dt)
 				end;
 			end;
 				
-		else	-- reset stuff if we turn RMT off 
-			if self.hasRMT and not self.rmtIsOn then
-					
-				-- reset gear ratios 
-				self.spec_motorized.motor.minForwardGearRatio = self.spec_realManualTransmission.minForwardGearRatioBackup;
-				self.spec_motorized.motor.maxForwardGearRatio = self.spec_realManualTransmission.maxForwardGearRatioBackup;
-		
-				self.spec_motorized.motor.minBackwardGearRatio = self.spec_realManualTransmission.minBackwardGearRatioBackup;
-				self.spec_motorized.motor.maxBackwardGearRatio= self.spec_realManualTransmission.maxBackwardGearRatioBackup;	
-				
-				-- reset low brakeforce 
-				self.spec_motorized.motor.lowBrakeForceScale = self.spec_realManualTransmission.lowBrakeForceScaleBackup;
-				
-				-- reset driving direction
-				self.spec_drivable.reverserDirection = 1;
-			end;
 		end;
 	end;
 end;

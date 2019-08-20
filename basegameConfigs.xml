@@ -16,7 +16,8 @@
 	
 	<!-- Sample configuration with all possible values/attributes -->
 																		<!-- configFile is only needed in this XML to identify the basegame vehicle, it is not for the use in Mods! If you want to add a config for a basegame, the name of the XML of that vehicle is what you need to add here -->
-	<realManualTransmission finalRatio="1" switchGearRangeMapping="true" configFile="Beispiel.xml" > <!-- finalRatio: speed multiplier for the entire transmission, switchGearRangeMapping: you can change the mapping so you shift the ranges with the gear buttons and gears with the range buttons -->
+	<realManualTransmission finalRatio="1" switchGearRangeMapping="true" configFile="Beispiel.xml" autoRangeMatching="true" > <!-- finalRatio: speed multiplier for the entire transmission, switchGearRangeMapping: you can change the mapping so you shift the ranges with the gear buttons and gears with the range buttons -->
+		<!-- autoRangeMatching: if this is active, RMT will automatically select the closest range in rangeSet1 when you shift into a new gear. For example John Deere PowerQuad-Plus -->
 		
 		<!-- gears configuration. Every transmission needs to have gears. The number of gears is minimum of 2, no maximum -->	
 		<gears defaultGear="1" powerShift="false" > <!-- defaultGear is optional, you can set gears to powerShift true -->
@@ -53,8 +54,9 @@
 		
 		<!-- this is the reverser, it is optional. In case of the 500 Fendt, we have a preselect type. That means that you can toggle the reverser but nothing happens until you press the clutch all the way in -->
 		<!-- if you just have a normal reverser the type is type="normal" and it works like you expect a normal reverser to work -->
-		<!-- for an example of how the preselect reverser works, look at the 500 Fendt Samplemod -->		
-		<reverser type="normal" > <!-- normal or preselect -->
+		<!-- for an example of how the preselect reverser works, look at the 500 Fendt Samplemod -->	
+		<!-- for a purely mechanical/manual reverser you need type="clutchOnly" that way you have to clutch to shift the reverser -->
+		<reverser type="normal" > <!-- normal, clutchOnly or preselect -->
 			<ratios forward="1" reverse="1" />
 			<settings brakeAggressionBias="1" clutchTime="500" /> <!-- settings are optional, it uses default values. But you can influence the amount/aggression when braking with brakeAggressionBias and the time the clutch takes to close again with clutchTime -->
 		</reverser>	
