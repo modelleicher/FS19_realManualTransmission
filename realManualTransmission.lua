@@ -4,6 +4,10 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.5.1.4 ###
+	-- outsourced functions to rmtUils script 
+	-- added new calculateRatio function for future-proofing
+	-- changes to the range matching calculation, it should fit better when upshifting now 
 -- V 0.5.1.3 ###
 	-- fixed reverser naming inconsistency in hud 
 -- V 0.5.1.2 ###
@@ -522,31 +526,6 @@ function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSe
 
 end;
 
--- using tables and average values to smooth stuff 
--- this function adds/fills the initial table with a default value to the given depth 
-function realManualTransmission:addSmoothingTable(depth, default)
-	local smoothingTable = {}
-	for i = 1, depth do
-		smoothingTable[i] = default;
-	end;
-	return smoothingTable; -- return the defailt table 
-end;
-
--- this function returns the average of the given table and optionally adds a new Value to it 
-function realManualTransmission:getSmoothingTableAverage(smoothingTable, addedValue)
-	if addedValue ~= nil then
-		for i = 2, #smoothingTable do -- shift over each value to the previous spot
-			smoothingTable[i-1] = smoothingTable[i];
-		end;
-		smoothingTable[#smoothingTable] = addedValue; -- add new value into last spot 
-	end;
-	local average = 0;
-	for i = 1, #smoothingTable do
-		average = average + smoothingTable[i];
-	end;
-	average = average / #smoothingTable;
-	return average;
-end;
 --
 --
 function realManualTransmission.initSpecialization()
@@ -565,14 +544,16 @@ function realManualTransmission:onLoad(savegame)
 	self.loadFromXML = realManualTransmission.loadFromXML;
 	self.processGearInputs = realManualTransmission.processGearInputs;
 	self.returnRpmNonClamped = realManualTransmission.returnRpmNonClamped;
-	self.addSmoothingTable = realManualTransmission.addSmoothingTable;
-	self.getSmoothingTableAverage = realManualTransmission.getSmoothingTableAverage;
+	--self.addSmoothingTable = realManualTransmission.addSmoothingTable;
+	--self.getSmoothingTableAverage = realManualTransmission.getSmoothingTableAverage;
 	self.setHandBrake = realManualTransmission.setHandBrake;
 	self.processRangeInputs = realManualTransmission.processRangeInputs;
 	self.checkRangeLockOut = realManualTransmission.checkRangeLockOut;
 	self.processClutchInput = realManualTransmission.processClutchInput;
 	self.synchGearsAndRanges = realManualTransmission.synchGearsAndRanges;
 	self.processToggleOnOff = realManualTransmission.processToggleOnOff;
+	
+	self.calculateRatio = realManualTransmission.calculateRatio;
 	
 	self.hasRMT = false;
 	self.rmtIsOn = false;
@@ -659,9 +640,9 @@ function realManualTransmission:onLoad(savegame)
 		self.spec_motorized.motor.lowBrakeForceScale = 0;
 		
 		-- new smoothing tables 
-		spec.loadPercentageSmoothing = self:addSmoothingTable(20, 0);
+		spec.loadPercentageSmoothing = rmtUtils:addSmoothingTable(20, 0);
 		
-		spec.clientRpmSmoothing = self:addSmoothingTable(20, 800);
+		spec.clientRpmSmoothing = rmtUtils:addSmoothingTable(20, 800);
 		
 		-- neutral variable 
 		spec.neutral = true;
@@ -1200,6 +1181,7 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 	local lockedOut = false;
 	
 	local gearChangeSuccess = false;
+	local previousGear = spec.currentGear;
 	
 	
 	-- check if wantedGear is not -1, -1 means we want to set it to neutral 
@@ -1281,31 +1263,45 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 			local lastClosestTo1 = 0;
 			local idealRange = nil;
 			
-			
-			-- TO DO, FIX THIS UGLY CODE 
-			local rangeRatio = 1;
-			if spec.rangeSet2 ~= nil then
-				rangeRatio = rangeRatio * spec.rangeSet2.ranges[spec.currentRange2].ratio;
-			end;
-			if spec.rangeSet3 ~= nil then	
-				rangeRatio = rangeRatio * spec.rangeSet3.ranges[spec.currentRange3].ratio;
-			end;			
-			-- 
-			
 			-- go through all the ranges, see which one matches the closest to the current speed 
 			for i = 1, rangeSet.numberOfRanges do 
 			
 				-- first, get the max speed in the possible range 
-				local speedMax = spec.gears[spec.currentGear].speed * rangeSet.ranges[i].ratio * rangeRatio * spec.finalRatio;
+				--local speedMax = spec.gears[spec.currentGear].speed * rangeSet.ranges[i].ratio * rangeRatio * spec.finalRatio; -- V 0.5.1.4 removed this 
+				
+				local speedMax = self:calculateRatio(true, spec.currentGear, i);
 				-- now calculate the min speed in that possible range 
 				local speedMin = speedMax * (self.spec_motorized.motor.minRpm / self.spec_motorized.motor.maxRpm);
+				-- we don't want to be at minRpm / idle though, so add 26% speed 
+				--speedMin = speedMin * 1.26;
 				-- now get the average speed
 				local speedAverage = (speedMin + speedMax) / 2;
 				
+				-- old way 
 				-- now calculate how far away we are from the current speed 
-				local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
+				--local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
 				
-				--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference);
+				-- V 0.5.1.4 new way:
+				-- check if we upshifted or downshifted 
+				-- start out with average though in case we shiftet in and out of the same gear 
+				--local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
+				--if previousGear > spec.currentGear then -- we downshifted 
+				--	difference = math.min(currentSpeed, speedMax) / math.max(currentSpeed, speedMax) -- if we downshifted we want a gear that we reach at the top of our rev range with the current speed 
+				--elseif previousGear < spec.currentGear then -- we upshifted 
+				--	difference = math.min(currentSpeed, speedMin) / math.max(currentSpeed, speedMin) -- if we upshifted we want a gear that we reach at the bottom of our rev range with the current speed 
+				--end;
+				
+				-- new way again
+				local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
+				if previousGear > spec.currentGear then -- we downshifted 
+					difference = math.min(currentSpeed, speedMax) / math.max(currentSpeed, speedMax) -- if we downshifted we want a gear that we reach at the top of our rev range with the current speed 
+					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference);
+				elseif previousGear < spec.currentGear then -- we upshifted 
+					difference = math.min(currentSpeed*1.5, speedMax) / math.max(currentSpeed*1.5, speedMax) -- if we upshifted we want a gear that we reach at the bottom of our rev range with the current speed 
+					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference.." currentSpeed+: "..(currentSpeed*1.25));
+				end;
+				
+				
 				-- if the current difference is smaller than the last closest to 1, we have a new closest range 
 				if difference > lastClosestTo1 then
 					idealRange = i; -- our new ideal range is 1
@@ -1362,6 +1358,57 @@ function realManualTransmission:selectReverser(isForward, noEventSend)
 		end;
 	end;
 
+end;
+
+-- function to calculate the current ratio or speed given all ranges, gears, reversers and so on.
+-- can either be used to calculate current actual speed or if given other than current paramenters to calculate possible speed in a different gear/range/setting etc.
+function realManualTransmission:calculateRatio(returnSpeed, gear, range1, range2, range3, reverserDirection)
+	local spec = self.spec_realManualTransmission;
+	gear = Utils.getNoNil(gear, spec.currentGear);
+	range1 = Utils.getNoNil(range1, spec.currentRange1);
+	range2 = Utils.getNoNil(range2, spec.currentRange2);
+	range3 = Utils.getNoNil(range3, spec.currentRange3);
+	if spec.reverser ~= nil then
+		reverserDirection = Utils.getNoNil(reverserDirection, spec.reverser.isForward);
+	end;
+	
+	-- first, get total ranges ratio between all 3 possible rangeSets 
+	local rangeRatio = 1;
+	if spec.rangeSet1 ~= nil then
+		rangeRatio = rangeRatio * spec.rangeSet1.ranges[range1].ratio;
+	end;
+	if spec.rangeSet2 ~= nil then
+		rangeRatio = rangeRatio * spec.rangeSet2.ranges[range2].ratio;
+	end;
+	if spec.rangeSet3 ~= nil then	
+		rangeRatio = rangeRatio * spec.rangeSet3.ranges[range3].ratio;
+	end;				
+	
+	-- get the reverser ratio 
+	local reverserRatio = 1;
+	if spec.reverser ~= nil then
+		if reverserDirection then
+			reverserRatio = spec.reverser.forwardRatio;
+		else
+			reverserRatio = spec.reverser.reverseRatio;
+		end;
+	end;
+	
+	-- get gear ratio 
+	local gearRatio = 1;
+	if spec.gears ~= nil then
+		gearRatio = spec.gears[gear].ratio;
+	end;	
+
+
+	if returnSpeed then
+		local speed = spec.gears[gear].speed * rangeRatio * reverserRatio * spec.finalRatio;
+		return speed;
+	end;
+	
+	local endRatio = gearRatio / rangeRatio / reverserRatio / spec.finalRatio;
+		
+	return endRatio;
 end;
 function realManualTransmission:onUpdate(dt) 
 
@@ -1472,9 +1519,9 @@ function realManualTransmission:onUpdate(dt)
 				-- if loadPercentage is 1, e.g. max load or clutch/neutral, we add the value twice to the smoothing table to half the smoothing for faster reaction time 
 				-- changed in V 0.4.2.0
 				if loadPercentage > 0.99 then
-					self:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
+					rmtUtils:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
 				end;
-				local newAverage = self:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
+				local newAverage = rmtUtils:getSmoothingTableAverage(spec.loadPercentageSmoothing, loadPercentage);
 				self.spec_motorized.smoothedLoadPercentage = newAverage;			
 			
 				--self.spec_motorized.smoothedLoadPercentage = spec.loadPercentage;
@@ -1614,25 +1661,9 @@ function realManualTransmission:onUpdate(dt)
 				end;
 			end;
 			
-			-- first, get total ranges ratio between all 3 possible rangeSets 
-			local rangeRatio = 1;
-			if spec.rangeSet1 ~= nil then
-				rangeRatio = rangeRatio * spec.rangeSet1.ranges[spec.currentRange1].ratio;
-			end;
-			if spec.rangeSet2 ~= nil then
-				rangeRatio = rangeRatio * spec.rangeSet2.ranges[spec.currentRange2].ratio;
-			end;
-			if spec.rangeSet3 ~= nil then	
-				rangeRatio = rangeRatio * spec.rangeSet3.ranges[spec.currentRange3].ratio;
-			end;
-			-- then get the current gear ratio provided we have gears 
-			local gearRatio = 1;
-			if spec.gears ~= nil then
-				gearRatio = spec.gears[spec.currentGear].ratio;
-			end;
+			
 			-- now calculate wanted gear ratio with gear and rangeRatio and final ratio 
-			-- we need to divide since its inverse ratio 
-			spec.wantedGearRatio = gearRatio / rangeRatio / spec.finalRatio;
+			spec.wantedGearRatio = self:calculateRatio()
 			
 			-- current wanted speed is needed for engine break calculation
 			spec.currentWantedSpeed = 836 / spec.wantedGearRatio;  -- (836 is a "giants constant for converting ratio to speed) 
