@@ -291,7 +291,8 @@ function rmtMenu:onDraw()
 				end;
 			end;
 			if hud.showClutch then
-				renderText(x, y, 0.02, "Clutch: "..tostring(math.floor(fb.clutchPercent*100)).."%");
+				local clutchPercent = math.min(fb.clutchPercentManual, fb.clutchPercentAuto);
+				renderText(x, y, 0.02, "Clutch: "..tostring(math.floor(clutchPercent*100)).."%");
 				y = y + addY;
 			end;
 			if hud.showRpm then

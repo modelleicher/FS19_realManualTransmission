@@ -27,3 +27,11 @@ function rmtUtils:getSmoothingTableAverage(smoothingTable, addedValue)
 	average = average / #smoothingTable;
 	return average;
 end;
+
+-- this function maps a value from one range to another one 
+function rmtUtils:mapValue(value, startMin, startMax, endMin, endMax)
+	return endMin + (value - startMin)*(endMax - endMin) / (startMax - startMin);
+end;
+
+
+

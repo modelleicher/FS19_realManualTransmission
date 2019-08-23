@@ -25,9 +25,12 @@
 			<gear speed="9.0" name="2" />
 			<gear speed="13.4" name="3" />
 			<gear speed="20.9" name="4" />
-			<gear speed="30.7" name="5" />
+			<gear speed="30.7" name="5" speedMatchingPercentageUp="0.34" speedMatchingPercentageDown="0.2" />
 			<gear speed="50.0" name="6" /> 
 		</gears>
+		<!-- (optional) speedMatchingPercentageUp: if you have autoRangeMatching active, you can set a percentage here of how much higher of a range than default speed it is looking for when shifting into that gear -->
+		<!-- this means in the example above when shifting from Gear 4 into Gear 5 it will look for a range which has a max. speed of 34% above our current speed (default is 0.25)-->
+		<!-- (optional) speedMatchingPercentageDown: same as up, just for downshifting. So in this case if we shift down from 6 to 5 we look for a range that is 20% higher than our current speed. (default is 0)
 		
 		<!-- RangeSets, rangeSets are also optional you don't need any-->
 		<!-- There are up to 3 rangeSets possible -->
@@ -66,6 +69,42 @@
 	<!-- end sample -->
 	
 	<!-- start actual -->
+	
+ <realManualTransmission configFile="favorit500.xml">
+			 
+	<!-- gears configuration. Every transmission needs to have gears. The number of gears is minimum of 2, no maximum -->
+	<gears>
+		<gear speed="5.4" name="1" />
+		<gear speed="9.0" name="2" />
+		<gear speed="13.4" name="3" />
+		<gear speed="20.9" name="4" />
+		<gear speed="30.7" name="5" />
+		<gear speed="50.0" name="6" />
+	</gears>
+	
+	<!-- this is the reverser, it is optional. In case of this Fendt, we have a preselect type. That means that you can toggle the reverser but nothing happens until you press the clutch all the way in -->
+	<!-- if you just have a normal reverser the type is type="normal" and it works like you expect a normal reverser to work -->
+	<reverser type="preselect" > <!-- normal or preselect -->
+		<ratios forward="1" reverse="1" /> <!-- you can set different ratios for backwards and forwards -->
+	</reverser>	   
+	
+	<!-- RangeSets, rangeSets are also optional you don't need any-->
+	<!-- There are up to 3 rangeSets possible. This one has two ergo, rangeSet1 and rangeSet2 -->
+	<rangeSet1 powerShift="true" defaultRange="1" > <!-- powerShift defines if the range is powershiftable. defaultRange is self-explanatory -->
+		<range ratio="0.512" name="I" /> <!-- ratio is the ratio of this range (speed in gear is multiplied by the range ratio/ratios) again, name.. isReverse is a possible attribute you can add to every range or gear to turn it into reverse -->
+		<range ratio="0.612" name="II" />
+		<range ratio="0.72" name="III" />
+		<range ratio="1" name="IV" />
+	</rangeSet1>
+		
+	<rangeSet2 powerShift="false" defaultRange="2" > <!-- powerShift defines if the range is powershiftable. defaultRange is self-explanatory -->
+		<range ratio="0.5" name="LO" />
+		<range ratio="1" name="HI" />
+	</rangeSet2>
+	
+	<fluidClutch stallRpm="1340" />
+	
+</realManualTransmission>	
 	
 <realManualTransmission configFile="1104.xml" >
 	

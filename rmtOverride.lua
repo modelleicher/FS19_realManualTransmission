@@ -94,11 +94,24 @@ function newMotorUpdate(self, dt)
 				self.lowBrakeForceScale = 0 --(vehicle.spec_realManualTransmission.wantedLowBrakeForceScale * clutchPercent) + (0.0001 * (1-clutchPercent));
 				
 				--local multi = clutchPercent * 0.7;
-				if clutchPercent < 0.2 then
+				--if clutchPercent < 0.2 then
+				--	clampedMotorRpm = currentRpm;
+				--else
+				--	clampedMotorRpm = (clampedMotorRpm * ((clutchPercent-0.2)*1.25)) + (currentRpm * (1-((clutchPercent-0.2)*1.25)));
+				--end;
+				
+				-- new bit V 0.5.1.5
+				
+				if clutchPercent < 0.2 then -- below 20% the clutch is fully opened, just use our RPM calculation
 					clampedMotorRpm = currentRpm;
+				elseif clutchPercent < 0.8 then -- up to 80% the clutch can still slip a lot, use fixed percentage 
+					clampedMotorRpm = (clampedMotorRpm * 0.1) + (currentRpm * 0.9);
+					--clampedMotorRpm = currentRpm;
 				else
 					clampedMotorRpm = (clampedMotorRpm * ((clutchPercent-0.2)*1.25)) + (currentRpm * (1-((clutchPercent-0.2)*1.25)));
 				end;
+				
+				
 				--renderText(0.1, 0.2, 0.02, "clampedMotorRpm: "..tostring(clampedMotorRpm).." currentRpm: "..tostring(currentRpm).." wantedRpm: "..tostring(wantedRpm).." accInput: "..tostring(accInput));
 			else
 
@@ -232,7 +245,7 @@ function newUpdateWheelsPhysics(self, dt, currentSpeed, acceleration, doHandbrak
 		
 		-- also, acceleration if clutch is present is dependent on clutch engagement percentage (only on positive acceleration, not on braking)
 		if acceleration > 0 then
-			acceleration = math.min(acceleration, acceleration*(self.spec_realManualTransmission.clutchPercent)) -- at 20% clutch engagement we already want almost 80% acceleration, this feels better 
+			acceleration = math.min(acceleration, acceleration*(math.min(self.spec_realManualTransmission.clutchPercent*4))) -- at 20% clutch engagement we already want almost 80% acceleration, this feels better 
 		end;
 		
 		-- version 0.0.2.5 change 
@@ -321,10 +334,10 @@ function newUpdateWheelsPhysics(self, dt, currentSpeed, acceleration, doHandbrak
 			
 			local maxClutchTorque = motor:getMaxClutchTorque()
 			local clutchPercent = math.max((self.spec_realManualTransmission.clutchPercent-0.2)*1.25, 0);
-			maxClutchTorque = maxClutchTorque * (clutchPercent*clutchPercent);
+			--maxClutchTorque = maxClutchTorque * (clutchPercent);
 			--print(maxClutchTorque);
 			
-			maxAcceleration = maxAcceleration * (clutchPercent*clutchPercent);
+			--maxAcceleration = maxAcceleration * (clutchPercent);
 			--print(maxAcceleration);
 	
 	        --print(string.format("set vehicle props:   accPed=%.1f   speed=%.1f gearRatio=[%.1f %.1f] rpm=[%.1f %.1f]", absAcceleratorPedal, maxSpeed, minGearRatio, maxGearRatio, minMotorRpm, maxMotorRpm))
