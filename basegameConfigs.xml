@@ -94,7 +94,7 @@
 		<range ratio="0.512" name="I" /> <!-- ratio is the ratio of this range (speed in gear is multiplied by the range ratio/ratios) again, name.. isReverse is a possible attribute you can add to every range or gear to turn it into reverse -->
 		<range ratio="0.612" name="II" />
 		<range ratio="0.72" name="III" />
-		<range ratio="1" name="IV" />
+		<range ratio="1" name="IV" autoDownshiftSpeed="43.5" />
 	</rangeSet1>
 		
 	<rangeSet2 powerShift="false" defaultRange="2" > <!-- powerShift defines if the range is powershiftable. defaultRange is self-explanatory -->

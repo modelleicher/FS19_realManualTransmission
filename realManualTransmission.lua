@@ -4,7 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
-
+-- V 0.5.1.6 ###
+	-- added ability for autoDownshiftSpeed to ranges. For example for Fendt's 40kph variant of the Fendt 500, it automatically downshifts from IV to III at 43.5kph
+	-- added support for specific rangeMatching calculation per gear 
 -- V 0.5.1.5 ###
 	-- autoRangeMatching speedMatching percentage up/down values optional per gear in XML now 
 	-- possible fix for error on Servers if vehicle does NOT have RMT 
@@ -255,7 +257,7 @@ function realManualTransmission:processRangeInputs(up, index, force, noEventSend
 		
 		local wantedRange = spec["currentRange"..tostring(index)] + up;
 		
-		if force ~= 0 then
+		if force ~= 0 and force ~= nil then
 			wantedRange = force;
 		end;
 		
@@ -466,10 +468,8 @@ function realManualTransmission:onLoad(savegame)
 		-- 
 		spec.useAutomaticClutch = false;
 		
-		self:addCheckBox("useAutoClutch", "use automatic clutch", 0.05, 0.05, 0.24, 0.68, "useAutomaticClutch"); 
-		
-		
-		
+		self:addCheckBox("useAutoClutch", "use automatic clutch", 0.05, 0.05, 0.24, 0.68, "useAutomaticClutch", nil, "clutchPercentAuto", 1); 
+			
 		spec.automaticClutch = {};
 		spec.automaticClutch.openTime = 600; --ms
 		spec.automaticClutch.closeTimeMax = 3000;
@@ -482,7 +482,7 @@ function realManualTransmission:onLoad(savegame)
 		
 		spec.automaticClutch.enableOpeningAtLowRPM = false;
 		
-		self:addCheckBox("enableOpeningAtLowRPM", "enable auto-clutch open at low RPM", 0.05, 0.05, 0.24, 0.63, "enableOpeningAtLowRPM", spec.automaticClutch); 
+		self:addCheckBox("enableOpeningAtLowRPM", "enable auto-clutch open at low RPM", 0.05, 0.05, 0.24, 0.63, "enableOpeningAtLowRPM", spec.automaticClutch, "clutchPercentAuto", 1); 
 		
 		spec.automaticClutch.openingAtLowRPMTriggered = false;
 		spec.automaticClutch.openingAtLowRPMLimit = 950;
@@ -768,6 +768,13 @@ function realManualTransmission:loadRanges(xmlFile, key)
 			range.disableRanges3Table = nil;
 		end;		
 		--
+		
+		-- V 0.5.1.6 automatic downshifting at certain speed 
+		local autoDownshiftSpeed = getXMLFloat(xmlFile, key..i..")#autoDownshiftSpeed");
+		if autoDownshiftSpeed ~= nil then
+			range.autoDownshiftSpeed = autoDownshiftSpeed;
+		end;
+		
 				
 		-- also store the highest ratio 
 		if range.ratio > highestRatio then
@@ -836,9 +843,9 @@ function realManualTransmission:loadGears(xmlFile, key)
 			gear.rangeAdjusts = rangeAdjusts;
 		end;
 		
-		-- speedmatching percentage 
-		gear.speedMatchingPercentageUp = 1 + Utils.getNoNil(getXMLFloat(xmlFile, key..i..")#speedMatchingUpPercentageUp"), 0.0) 
-		gear.speedMatchingPercentageDown = 1 + Utils.getNoNil(getXMLFloat(xmlFile, key..i..")#speedMatchingUpPercentageDown"), 0.25) 
+		-- speedmatching percentage 						
+		gear.speedMatchingPercentageUp = 1 + Utils.getNoNil(getXMLFloat(xmlFile, key..i..")#speedMatchingPercentageUp"), 0.25) 
+		gear.speedMatchingPercentageDown = 1 + Utils.getNoNil(getXMLFloat(xmlFile, key..i..")#speedMatchingPercentageDown"), 0.0) 
 		
 		-- insert gear to gears table 
 		table.insert(gears, gear);
@@ -1053,13 +1060,14 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 				-- V 0.5.1.5 added optional increase/decrease percentage for each gear via XML file, defaults to 25%
 				local speedMatchingPercentageUp = spec.gears[spec.currentGear].speedMatchingPercentageUp;
 				local speedMatchingPercentageDown = spec.gears[spec.currentGear].speedMatchingPercentageDown;
+				--print(speedMatchingPercentageUp);
 				local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
 				if previousGear > spec.currentGear then -- we downshifted 
 					difference = math.min(currentSpeed*speedMatchingPercentageDown, speedMax) / math.max(currentSpeed*speedMatchingPercentageDown, speedMax) -- if we downshifted we want a gear that we reach at the top of our rev range with the current speed 
 					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference);
 				elseif previousGear < spec.currentGear then -- we upshifted 
 					difference = math.min(currentSpeed*speedMatchingPercentageUp, speedMax) / math.max(currentSpeed*speedMatchingPercentageUp, speedMax) -- if we upshifted we want a gear that we reach at the bottom of our rev range with the current speed 
-					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference.." currentSpeed+: "..(currentSpeed*1.25));
+					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference.." currentSpeed+: "..currentSpeed.." curSpeedX: "..(currentSpeed*speedMatchingPercentageUp));
 				end;
 				
 				
@@ -1344,6 +1352,31 @@ function realManualTransmission:onUpdate(dt)
 						spec.lastNeutral = spec.neutral;
 					end;
 					
+					-- automatic downshifting a range at a certain speed ( V 0.5.1.6 )
+					local speed = self.lastSpeed*3600;
+					if spec.rangeSet1 ~= nil then
+						if spec.rangeSet1.ranges[spec.currentRange1].autoDownshiftSpeed ~= nil then
+							if speed > spec.rangeSet1.ranges[spec.currentRange1].autoDownshiftSpeed then
+								self:processRangeInputs(-1, 1);
+							end;
+						end;
+					end;
+					if spec.rangeSet2 ~= nil then
+						if spec.rangeSet2.ranges[spec.currentRange2].autoDownshiftSpeed ~= nil then
+							if speed > spec.rangeSet2.ranges[spec.currentRange2].autoDownshiftSpeed then
+								self:processRangeInputs(-1, 2);
+							end;
+						end;
+					end;
+					if spec.rangeSet3 ~= nil then
+						if spec.rangeSet3.ranges[spec.currentRange3].autoDownshiftSpeed ~= nil then
+							if speed > spec.rangeSet3.ranges[spec.currentRange3].autoDownshiftSpeed then
+								self:processRangeInputs(-1, 3);
+							end;
+						end;		
+					end;
+					--
+
 					local actualGearRatio = 0;
 					local currentGearRatio = 0;
 				
@@ -1591,6 +1624,7 @@ function realManualTransmission:onUpdate(dt)
 				end;
 			end;
 			
+
 			
 			-- direction selection
 			-- check if the gear or range we are in is reverse

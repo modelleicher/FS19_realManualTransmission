@@ -48,12 +48,7 @@ function rmtMenu:RMT_MOUSE_BUTTON(actionName, inputValue)
 		end;
 		for _, checkBox in pairs(self.spec_rmtMenu.checkBoxes) do
 			if checkBox.isHovered then
-				checkBox.state = not checkBox.state;
-				if checkBox.indexTable ~= nil then
-					checkBox.indexTable[checkBox.indexString] = checkBox.state;
-				else
-					self.spec_realManualTransmission[checkBox.indexString] = checkBox.state;
-				end;
+				self:updateCheckBox(checkBox, not checkBox.state);
 				self:synchMenuInput(checkBox.synchId, checkBox.state);
 			end;
 		end;
@@ -67,6 +62,30 @@ function rmtMenu:RMT_MOUSE_BUTTON(actionName, inputValue)
 	else
 		self.spec_rmtMenu.mouseHeldDown = false;
 		self.spec_rmtMenu.hud.isHeld = false;
+	end;
+end;
+
+function rmtMenu:updateCheckBox(checkBox, state)
+	checkBox.state = state;
+	if checkBox.indexTable ~= nil then
+		checkBox.indexTable[checkBox.indexString] = state;
+	else
+		self.spec_realManualTransmission[checkBox.indexString] = state;
+	end;
+	if checkBox.indexStringDefaultVar ~= nil then
+		if checkBox.defaultValueOff ~= nil and state == false then
+			if checkBox.defaultValueIndexTable ~= nil then
+				checkBox.defaultValueIndexTable[checkBox.indexStringDefaultVar] = checkBox.defaultValueOff;
+			else
+				self.spec_realManualTransmission[checkBox.indexStringDefaultVar] = checkBox.defaultValueOff;
+			end;
+		elseif checkBox.defaultValueOn ~= nil and state == true then
+			if checkBox.defaultValueIndexTable ~= nil then
+				checkBox.defaultValueIndexTable[checkBox.indexStringDefaultVar] = checkBox.defaultValueOn;
+			else
+				self.spec_realManualTransmission[checkBox.indexStringDefaultVar] = checkBox.defaultValueOn;
+			end;		
+		end;
 	end;
 end;
 
@@ -86,11 +105,7 @@ function rmtMenu:synchMenuInput(synchId, state, noEventSend)
 			end;
 			for _, checkBox in pairs(self.spec_rmtMenu.checkBoxes) do 
 				if checkBox.synchId == synchId then
-					if checkBox.indexTable ~= nil then
-						checkBox.indexTable[checkBox.indexString] = state;
-					else
-						self.spec_realManualTransmission[checkBox.indexString] = state;
-					end;
+					self:updateCheckBox(checkBox, state);
 				end;
 			end;
 		end;
@@ -100,7 +115,11 @@ end;
 -- name = name, text is text shown next to checkBox.. pos and size is self explanatory 
 -- indexString is the string value for the table index of the variable that is changing 
 -- indexTable in case our variable isn't directly in self.spec_realManualTransmission we can specify the table here 
-function rmtMenu:addCheckBox(name, text, sizeX, sizeY, posX, posY, indexString, indexTable)
+-- indexStringDefaultVar = we have an optional default variable that we want to set depending on checkbox state 
+-- defaultValueOff = the value we want the indexStringDefaultVar to be when the checkbox is selected off 
+-- defaultValueOn = the value we want the indexStringDefaultVar to be when the checkbox is selected on 
+-- defaultValueIndexTable = if we want to use a particular index Table 
+function rmtMenu:addCheckBox(name, text, sizeX, sizeY, posX, posY, indexString, indexTable, indexStringDefaultVar, defaultValueOff, defaultValueOn, defaultValueIndexTable)
 	local checkBox = {};
 	checkBox.name = name;
 	checkBox.text = text;
@@ -116,6 +135,21 @@ function rmtMenu:addCheckBox(name, text, sizeX, sizeY, posX, posY, indexString, 
 		checkBox.indexTable = indexTable;
 	else	
 		checkBox.indexTable = self.spec_realManualTransmission;
+	end;
+	
+	if indexStringDefaultVar ~= nil then
+		checkBox.indexStringDefaultVar = indexStringDefaultVar;
+		if defaultValueOff ~= nil then
+			checkBox.defaultValueOff = defaultValueOff;
+		end;
+		if defaultValueOn ~= nil then
+			checkBox.defaultValueOn = defaultValueOn;
+		end;
+		if defaultValueIndexTable ~= nil then
+			checkBox.defaultValueIndexTable = defaultValueIndexTable;
+		else
+			checkBox.defaultValueIndexTable = self.spec_realManualTransmission;
+		end;
 	end;
 	
 	checkBox.indexString = indexString;
@@ -158,6 +192,7 @@ function rmtMenu:onLoad(savegame)
 	self.addCheckBox = rmtMenu.addCheckBox;
 	self.addButton = rmtMenu.addButton;
 	self.synchMenuInput = rmtMenu.synchMenuInput;
+	self.updateCheckBox = rmtMenu.updateCheckBox;
 	
 	self.spec_rmtMenu = {};
 	
