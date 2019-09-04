@@ -4,6 +4,10 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.5.1.7 ###
+	-- small change to load return for sound, load-sound starts to play even at low RPM now 
+	-- fixed bug with rangeSet3 lockout code 
+	-- improved motorLoad calculation clientSide in multiplayer 
 -- V 0.5.1.6 ###
 	-- added ability for autoDownshiftSpeed to ranges. For example for Fendt's 40kph variant of the Fendt 500, it automatically downshifts from IV to III at 43.5kph
 	-- added support for specific rangeMatching calculation per gear 
@@ -170,6 +174,8 @@ end;
 
 function realManualTransmission.initSpecialization()
 	g_configurationManager:addConfigurationType("realManualTransmission", "realManualTransmission", nil, nil, nil, nil, ConfigurationUtil.SELECTOR_MULTIOPTION) -- add config option 
+
+	--realManualTransmission.modifier_MOTOR_LOAD_GOV = g_soundManager:registerModifierType("MOTOR_LOAD_GOV", realManualTransmission.returnMotorLoadGov, realManualTransmission.returnMotorLoadGovMin, realManualTransmission.returnMotorLoadGovMax);
 end
 
 
@@ -896,10 +902,10 @@ function realManualTransmission:checkRangeLockOut(wantedRange, rangeSet, other1,
 			-- not implemented yet 
 		end;
 	end;
-	if spec[strRangeSet3] ~= nil and spec[strRangeSet3].ranges[spec[strRangeSet3]].disableRanges1Table ~= nil and spec[strRangeSet3].ranges[spec[strRangeSet3]].disableRanges1Table[tostring(wantedRange)] then
-		if spec[strRangeSet3].ranges[spec[strRangeSet3]][strDisableRangesType1] == "lock" then -- we can not shift into this range since it is locked 
+	if spec[strRangeSet3] ~= nil and spec[strRangeSet3].ranges[spec[strCurrentRange3]].disableRanges1Table ~= nil and spec[strRangeSet3].ranges[spec[strCurrentRange3]].disableRanges1Table[tostring(wantedRange)] then
+		if spec[strRangeSet3].ranges[spec[strCurrentRange3]][strDisableRangesType1] == "lock" then -- we can not shift into this range since it is locked 
 			lockOutTrue = true;
-		elseif spec[strRangeSet3].ranges[spec[strRangeSet3]][strDisableRangesType1] == "neutral" then
+		elseif spec[strRangeSet3].ranges[spec[strCurrentRange3]][strDisableRangesType1] == "neutral" then
 			-- not implemented yet 
 		end;
 	end;	
@@ -1263,17 +1269,15 @@ function realManualTransmission:onUpdate(dt)
 				end;
 				
 				-- if we are client, use simplified load percentage calculation 
-				-- TO DO : make this more accurate 
+				-- TO DO : make this more accurate - done 
 				if not self.isServer then
-					if (rpm / motor.maxRpm + 0.1) < mAxisForward then
-						loadPercentage = 1;
-					else
-						loadPercentage = 0;
-					end;
+					loadPercentage = mAxisForward - (rpm / motor.maxRpm)
 				end;
 			
 				-- actual load percentage 
 				self.spec_motorized.actualLoadPercentage = loadPercentage
+				
+				self.spec_motorized.motorLoadGov = mAxisForward - (rpm / motor.maxRpm) 
 				
 				
 				-- smoothed load percentage 
@@ -1689,6 +1693,7 @@ function realManualTransmission:onUpdate(dt)
 		end;
 	end;
 end;
+
 
 function realManualTransmission:synchGearsAndRanges(currentGear, currentRange1, currentRange2, currentRange3, neutral, noEventSend)
 	currentGear = Utils.getNoNil(currentGear, 1);

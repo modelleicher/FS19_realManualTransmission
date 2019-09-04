@@ -176,6 +176,18 @@ VehicleMotor.update = newMotorUpdate;
 -- g_soundManager.modifierTypeIndexToDesc[SoundModifierType.MOTOR_LOAD].func = function (self) return 0.5 end
 
 -- Motorized:getMotorLoadPercentage()
+
+--SoundManager:registerModifierType(typeName, func, minFunc, maxFunc)
+
+-- return load only, not influenced by RPM 
+local oldGetMotorLoadPercentage = Motorized.getMotorLoadPercentage;
+function newGetMotorLoadPercentage(self)
+	if not self.hasRMT or not self.rmtIsOn then
+		return oldGetMotorLoadPercentage(self);
+	end;
+	return self.spec_motorized.smoothedLoadPercentage;
+end
+Motorized.getMotorLoadPercentage = newGetMotorLoadPercentage;
 	
 -- self:getMotorRpmPercentage()
 local oldUpdateWheelsPhysics = WheelsUtil.updateWheelsPhysics;
