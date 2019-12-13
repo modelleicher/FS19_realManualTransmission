@@ -1259,6 +1259,25 @@ function realManualTransmission:onUpdate(dt)
 				-- we need the load percentage without PTO to calculate engine brake effect 
 				local loadPercentageNoPTO = (self.spec_motorized.motor:getMotorAppliedTorque()-self.spec_motorized.motor:getMotorExternalTorque()) / math.max( self.spec_motorized.motor:getMotorAvailableTorque(), 0.0001)
 	
+
+				-- if we are client, use simplified load percentage calculation 
+				-- TO DO : make this more accurate - done 
+				if not self.isServer then
+					rpm = self.spec_motorized.motor.equalizedMotorRpm;
+					-- range is between minRpm and maxRpm 
+					local range = motor.maxRpm - motor.minRpm;
+					local rawPercentage = mAxisForward - ((rpm-motor.minRpm) / range);
+					-- if we decelerate we have negative value 
+					if rawPercentage < 0 then 
+						-- have a little load on hard deceleration 
+						loadPercentage = math.abs(rawPercentage*0.2);
+					else
+						-- we want to have max. load at 25% difference already 
+						loadPercentage = math.min(rawPercentage * 10, 1);
+					end;
+				
+				end;
+			
 				if spec.clutchPercent < 0.6 or spec.neutral then
 					-- if clutch is pressed or neutral, load percentage is calculated using wanted and actual RPM 
 					if (rpm / motor.maxRpm) < mAxisForward then
@@ -1268,14 +1287,8 @@ function realManualTransmission:onUpdate(dt)
 					end;
 				end;
 				
-				-- if we are client, use simplified load percentage calculation 
-				-- TO DO : make this more accurate - done 
-				if not self.isServer then
-					loadPercentage = mAxisForward - (rpm / motor.maxRpm)
-				end;
-			
 				-- actual load percentage 
-				self.spec_motorized.actualLoadPercentage = loadPercentage
+				self.spec_motorized.actualLoadPercentage = loadPercentage;
 				
 				self.spec_motorized.motorLoadGov = mAxisForward - (rpm / motor.maxRpm) 
 				
