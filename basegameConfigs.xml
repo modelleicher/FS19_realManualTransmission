@@ -104,7 +104,33 @@
 	
 	<fluidClutch stallRpm="1340" />
 	
-</realManualTransmission>	
+</realManualTransmission>
+
+	<realManualTransmission configFile="arion400.xml" > <!-- Arion 400 Quadrishift Transmission -->
+		<!-- not ideal since the 4 gears A - D technically aren't powershift but normal gears that are shifted hydraulically with the press of a button and clutch is automatically pressed -->
+	    <!-- but powershift is the closest we have in RMT right now -->
+        <gears defaultGear="2" powerShift="true">
+            <gear speed="4" name="A" />	
+            <gear speed="8" name="B" />		
+            <gear speed="18" name="C" />			
+            <gear speed="42" name="D" />
+        </gears>
+		
+     	<reverser type="normal" > 
+			<ratios forward="1" reverse="1" />
+			<settings brakeAggressionBias="0.3" clutchTime="500" />
+		</reverser>	   
+        
+        <rangeSet1 powerShift="true" defaultRange="1" >
+            <range ratio="0.5476" name="1" />
+            <range ratio="0.6548" name="2" />
+            <range ratio="0.8214" name="3" />
+            <range ratio="1" name="4" />
+        </rangeSet1>
+            
+
+        
+    </realManualTransmission>	
 	
 <realManualTransmission configFile="1104.xml" >
 	

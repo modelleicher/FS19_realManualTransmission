@@ -4,6 +4,13 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.6.0.0 ###
+	-- added possibility to add RMT to DLC vehicles via basegameConfigs.xml 
+	-- added Claas Arion 400 Quadrashift transmission to  basegameConfigs.xml 
+-- V 0.5.1.9 ###
+	-- Multiplayer load sound calculation final fix and some other small fixes 
+-- V 0.5.1.8 ###
+	-- can't remember what I fixed and forgot to add here.. 
 -- V 0.5.1.7 ###
 	-- small change to load return for sound, load-sound starts to play even at low RPM now 
 	-- fixed bug with rangeSet3 lockout code 
@@ -355,8 +362,12 @@ function realManualTransmission:onLoad(savegame)
 	local configFile = StringUtil.splitString("/", self.configFileName);
 	local baseDirectory = StringUtil.splitString("/", self.baseDirectory);
 	local basegameConfigsXML = g_currentMission.rmtGlobals.basegameConfigsXML;
+
+	--print(tostring(baseDirectory[#baseDirectory-2]));
+	--print(tostring(configFile[#configFile]));	
 	
-	if self.baseDirectory == "" then -- is no mod 
+	-- base directory "" -> basegame vehicle,  -- path ends in /pdlc/dlcName so its a DLC
+	if self.baseDirectory == "" or baseDirectory[#baseDirectory-2] == "pdlc" then 
 		print("RMT Debug: "..tostring(configFile[#configFile]).." is not a Mod.");
 		local i = 0;
 		while true do
@@ -1632,10 +1643,14 @@ function realManualTransmission:onUpdate(dt)
 					local range = spec.fluidClutch.stallRpm - motor.minRpm;
 					-- get the linear closing percentage 
 					local linearPercentage = (rpm - motor.minRpm) / range;
-					-- IRL, at idle the clutch is already partially closed and the vehicle is only held by the brake 
-					linearPercentage = rmtUtils:mapValue(linearPercentage, 0, 1, 0.25, 1);
 					
-					spec.clutchPercentFluid = math.max(0, math.min(linearPercentage, 1));
+					-- V 0.6.0.0 fix/change, use non-linear closing of clutch to lessen the stall effect 
+					local nonLinearPercentage = linearPercentage * linearPercentage;
+					
+					-- IRL, at idle the clutch is already partially closed and the vehicle is only held by the brake 
+					nonLinearPercentage = rmtUtils:mapValue(nonLinearPercentage, 0, 1, 0.25, 1);					
+					
+					spec.clutchPercentFluid = math.max(0, math.min(nonLinearPercentage, 1));
 				else
 					spec.clutchPercentFluid = 1;
 				end;
