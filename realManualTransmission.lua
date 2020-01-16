@@ -4,6 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.6.0.2 ###
+	-- temporary "fixed" issue with Real Dirt Color as it destroys loadMap function so I moved stuff somewhere else.
+	-- I would not recommend to use Real Dirt Color until it is updated since it will have issues with other mods aswell. But RMT should be fine now.
 -- V 0.6.0.1 ###
 	-- changed fuction override from storing orig. function in local variable to using Utils.overwrittenFunction to avoid mod conflicts 
 	-- fixed gear disable in range not working bug 
@@ -202,6 +205,13 @@ function realManualTransmission.registerEventListeners(vehicleType)
 end;
 
 function realManualTransmission:onLoad(savegame)
+
+	-- TEMPORARY FIX FOR USE WITH REAL DIRT COLOR SINCE THAT SCRIPT DESTROYS loadMap Function for all other mods loading afterwards
+	if g_currentMission.rmtGlobals == nil then
+		g_currentMission.rmtGlobals = {};
+		g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
+	end;
+	--
 
 	self.loadGears = realManualTransmission.loadGears;
 	self.loadRanges = realManualTransmission.loadRanges;

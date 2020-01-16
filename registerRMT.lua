@@ -50,6 +50,7 @@ rmtLoadXMLConfigs.modDirectory = g_currentModDirectory;
 
 function rmtLoadXMLConfigs:loadMap(n)
 
+    print("load map RMT true")
 	g_currentMission.rmtGlobals = {};
 	g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
 
@@ -57,8 +58,6 @@ function rmtLoadXMLConfigs:loadMap(n)
 end;
 
 addModEventListener(rmtLoadXMLConfigs);
-
-
 
 
 
