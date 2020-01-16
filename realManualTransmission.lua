@@ -4,6 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- Changelog:
+-- V 0.6.0.1 ###
+	-- changed fuction override from storing orig. function in local variable to using Utils.overwrittenFunction to avoid mod conflicts 
+	-- fixed gear disable in range not working bug 
 -- V 0.6.0.0 ###
 	-- added possibility to add RMT to DLC vehicles via basegameConfigs.xml 
 	-- added Claas Arion 400 Quadrashift transmission to  basegameConfigs.xml 
@@ -196,131 +199,6 @@ function realManualTransmission.registerEventListeners(vehicleType)
 	SpecializationUtil.registerEventListener(vehicleType, "onWriteUpdateStream", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onReadStream", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onReadUpdateStream", realManualTransmission);
-end;
-
-
-
-function realManualTransmission:setHandBrake(state, noEventSend)
-	setHandbrakeEvent.sendEvent(self, state, noEventSend);
-	self.spec_realManualTransmission.handBrake = state;
-end;
-
-function realManualTransmission:processClutchInput(inputValue, noEventSend)
-	processClutchInputEvent.sendEvent(self, inputValue, noEventSend);
-	local spec = self.spec_realManualTransmission;
-	--print("processClutchInput: "..tostring(inputValue));
-	if inputValue == 1 then 
-		spec.automaticClutch.wantOpen = true; 
-		spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
-		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
-		spec.automaticClutch.wantedGear = nil; -- no wanted gear, we just want to open the clutch  
-		spec.automaticClutch.preventClosing = true;
-	elseif inputValue == 0 then
-		if not spec.automaticClutch.openingAtLowRPMTriggered then -- check if we don't hold the clutch open due to minRpm automatic opening already, in that case don't close it again.
-			spec.automaticClutch.preventClosing = false;
-		end;
-	end;
-end;
-
-
-function realManualTransmission:processGearInputs(gearValue, sequentialDir, noEventSend)
-	-- send the event here, this is the last clienct & server function 
-	processGearInputsEvent.sendEvent(self, gearValue, sequentialDir, noEventSend);
-	-- now start the server-stuff 
-	if self.isServer then
-		local spec = self.spec_realManualTransmission;
-		if sequentialDir == 0 then -- we called this via direct selection, so we select the gear or range directly 
-			self:selectGear(gearValue, gearValue);
-		end;
-		
-		if sequentialDir == 1 or sequentialDir == -1 then -- we called this via up/down keys e.g. sequential
-			-- just select the gear we want to.. see if we get lockOut back 
-			local lockOut = self:selectGear(spec.currentGear + (1*sequentialDir));
-			-- if we get locked out of the gear we want to shift in, try to shift down to the next gear and the next
-			-- to see if we can shift into the next allowed gear, stop if 1 is reached 
-			if lockOut then
-				local i = 2;
-				while true do
-					local curGear = math.min(math.max(1, spec.currentGear - (i*sequentialDir)), spec.numberOfGears); -- cur wanted gear is i or 1
-					lockOut = self:selectGear(curGear); -- try the next gear, return if we are locked out again 
-					if lockOut and (curGear == 1 or curGear == spec.numberOfGears) or lockOut == false then -- if we're still locked out but curGear is 1 or max gear, stop looking for gears 
-						break;
-					end;	
-					i = i+1;
-				end;
-			end;
-		end;
-	end;
-end;
-
-function realManualTransmission:processRangeInputs(up, index, force, noEventSend)
-	-- send the event here, this is the last clienct & server function 
-	processRangeInputsEvent.sendEvent(self, up, index, force, noEventSend);
-	--print("process range inputs");
-	-- now start the server-stuff 
-	if self.isServer then
-		local spec = self.spec_realManualTransmission;
-
-		
-		local rangeSet = spec["rangeSet"..tostring(index)]; -- convert range set index to table 
-		local other1, other2;
-		if index == 1 then other1 = 2; other2 = 3 end;
-		if index == 2 then other1 = 1; other2 = 3 end;
-		if index == 3 then other1 = 1; other2 = 2 end;
-		
-		local wantedRange = spec["currentRange"..tostring(index)] + up;
-		
-		if force ~= 0 and force ~= nil then
-			wantedRange = force;
-		end;
-		
-		-- make sure our wantedRange is between min and max range we have 
-		wantedRange = math.max(1, math.min(wantedRange, rangeSet.numberOfRanges));
-		
-		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(wantedRange, index, other1, other2);
-		
-		if lockOutTrue then
-			wantedRange = nil;
-		end;	
-		
-		if wantedRange ~= nil then
-			self:selectRange(wantedRange, index, wantedNeutral);
-		end;
-	end;
-end;
-
-function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSend)
-	
-	if self.spec_realManualTransmission ~= nil and self.hasRMT then
-		if isUserInput and self.spec_realManualTransmission.disableTurningOff then
-			-- TO DO: Show message that disabling RMT was disabled on the server/savegame.
-		else
-			if state ~= nil then
-				self.rmtIsOn = state;
-			else
-				self.rmtIsOn = not self.rmtIsOn;
-				state = self.rmtIsOn;
-			end;
-			-- if we switched RMT off, reset a few values
-			if not self.rmtIsOn then
-				-- reset gear ratios 
-				self.spec_motorized.motor.minForwardGearRatio = self.spec_realManualTransmission.minForwardGearRatioBackup;
-				self.spec_motorized.motor.maxForwardGearRatio = self.spec_realManualTransmission.maxForwardGearRatioBackup;
-		
-				self.spec_motorized.motor.minBackwardGearRatio = self.spec_realManualTransmission.minBackwardGearRatioBackup;
-				self.spec_motorized.motor.maxBackwardGearRatio= self.spec_realManualTransmission.maxBackwardGearRatioBackup;	
-				
-				-- reset low brakeforce 
-				self.spec_motorized.motor.lowBrakeForceScale = self.spec_realManualTransmission.lowBrakeForceScaleBackup;
-				
-				-- reset driving direction
-				self.spec_drivable.reverserDirection = 1;
-			end;
-			processToggleOnOffEvent.sendEvent(self, state, noEventSend);
-		end;
-		
-	end;
-
 end;
 
 function realManualTransmission:onLoad(savegame)
@@ -697,7 +575,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 			spec.reverser.reverseRatio = getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.ratios#reverse");
 			spec.reverser.brakeAggressionBias = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.settings#brakeAggressionBias"), 1);
 			spec.reverser.clutchTime = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission.reverser("..i..").settings#clutchTime"), 500);
-			
+						
 			spec.reverser.isForward = true;
 			spec.reverser.wantForward = true;
 			spec.reverser.isBraking = false;
@@ -875,6 +753,143 @@ function realManualTransmission:loadGears(xmlFile, key)
 end;
 
 
+
+function realManualTransmission:setHandBrake(state, noEventSend)
+	setHandbrakeEvent.sendEvent(self, state, noEventSend);
+	self.spec_realManualTransmission.handBrake = state;
+end;
+
+function realManualTransmission:processClutchInput(inputValue, noEventSend)
+	processClutchInputEvent.sendEvent(self, inputValue, noEventSend);
+	local spec = self.spec_realManualTransmission;
+	--print("processClutchInput: "..tostring(inputValue));
+	if inputValue == 1 then 
+		spec.automaticClutch.wantOpen = true; 
+		spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
+		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
+		spec.automaticClutch.wantedGear = nil; -- no wanted gear, we just want to open the clutch  
+		spec.automaticClutch.preventClosing = true;
+	elseif inputValue == 0 then
+		if not spec.automaticClutch.openingAtLowRPMTriggered then -- check if we don't hold the clutch open due to minRpm automatic opening already, in that case don't close it again.
+			spec.automaticClutch.preventClosing = false;
+		end;
+	end;
+end;
+
+
+function realManualTransmission:processGearInputs(gearValue, sequentialDir, noEventSend)
+	-- send the event here, this is the last clienct & server function 
+	processGearInputsEvent.sendEvent(self, gearValue, sequentialDir, noEventSend);
+	-- now start the server-stuff 
+	if self.isServer then
+		local spec = self.spec_realManualTransmission;
+		if sequentialDir == 0 then -- we called this via direct selection, so we select the gear or range directly 
+			self:selectGear(gearValue, gearValue);
+		end;
+		
+		if sequentialDir == 1 or sequentialDir == -1 then -- we called this via up/down keys e.g. sequential
+			-- just select the gear we want to.. see if we get lockOut back 
+			local lockOut = self:selectGear(spec.currentGear + (1*sequentialDir));
+			-- if we get locked out of the gear we want to shift in, try to shift down/up to the next gear and the next
+			-- to see if we can shift into the next allowed gear, stop if 1 or max is reached 
+			if lockOut then
+				if sequentialDir == 1 then -- upshifting 
+					local i = spec.currentGear + 1; 
+					while true do -- try for each gear upwards from currentGear 
+						local checkGear = math.min(spec.currentGear + i, spec.numberOfGears);
+						lockOut = self:selectGear(checkGear); 
+						if lockOut and checkGear == spec.numberOfGears or lockOut == false then -- stop if max gear is reached and still lockout, or lockout returned false 
+							break;
+						end;
+						i = i + 1;
+					end;
+				elseif sequentialDir == -1 then -- downshifting
+					local i = spec.currentGear - 1;
+					while true do -- try for each gear downwards from currentGear 
+						local checkGear = math.max(spec.currentGear - i, 1);
+						lockOut = self:selectGear(checkGear);
+						if lockOut and checkGear == 1 or lockOut == false then
+							break;
+						end;
+						i = i - 1;
+					end;
+				end;
+			end;
+		end;
+	end;
+end;
+
+function realManualTransmission:processRangeInputs(up, index, force, noEventSend)
+	-- send the event here, this is the last clienct & server function 
+	processRangeInputsEvent.sendEvent(self, up, index, force, noEventSend);
+	--print("process range inputs");
+	-- now start the server-stuff 
+	if self.isServer then
+		local spec = self.spec_realManualTransmission;
+
+		
+		local rangeSet = spec["rangeSet"..tostring(index)]; -- convert range set index to table 
+		local other1, other2;
+		if index == 1 then other1 = 2; other2 = 3 end;
+		if index == 2 then other1 = 1; other2 = 3 end;
+		if index == 3 then other1 = 1; other2 = 2 end;
+		
+		local wantedRange = spec["currentRange"..tostring(index)] + up;
+		
+		if force ~= 0 and force ~= nil then
+			wantedRange = force;
+		end;
+		
+		-- make sure our wantedRange is between min and max range we have 
+		wantedRange = math.max(1, math.min(wantedRange, rangeSet.numberOfRanges));
+		
+		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(wantedRange, index, other1, other2);
+		
+		if lockOutTrue then
+			wantedRange = nil;
+		end;	
+		
+		if wantedRange ~= nil then
+			self:selectRange(wantedRange, index, wantedNeutral);
+		end;
+	end;
+end;
+
+function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSend)
+	
+	if self.spec_realManualTransmission ~= nil and self.hasRMT then
+		if isUserInput and self.spec_realManualTransmission.disableTurningOff then
+			-- TO DO: Show message that disabling RMT was disabled on the server/savegame.
+		else
+			if state ~= nil then
+				self.rmtIsOn = state;
+			else
+				self.rmtIsOn = not self.rmtIsOn;
+				state = self.rmtIsOn;
+			end;
+			-- if we switched RMT off, reset a few values
+			if not self.rmtIsOn then
+				-- reset gear ratios 
+				self.spec_motorized.motor.minForwardGearRatio = self.spec_realManualTransmission.minForwardGearRatioBackup;
+				self.spec_motorized.motor.maxForwardGearRatio = self.spec_realManualTransmission.maxForwardGearRatioBackup;
+		
+				self.spec_motorized.motor.minBackwardGearRatio = self.spec_realManualTransmission.minBackwardGearRatioBackup;
+				self.spec_motorized.motor.maxBackwardGearRatio= self.spec_realManualTransmission.maxBackwardGearRatioBackup;	
+				
+				-- reset low brakeforce 
+				self.spec_motorized.motor.lowBrakeForceScale = self.spec_realManualTransmission.lowBrakeForceScaleBackup;
+				
+				-- reset driving direction
+				self.spec_drivable.reverserDirection = 1;
+			end;
+			processToggleOnOffEvent.sendEvent(self, state, noEventSend);
+		end;
+		
+	end;
+
+end;
+
+
 function realManualTransmission:checkRangeLockOut(wantedRange, rangeSet, other1, other2)
 	local spec = self.spec_realManualTransmission;
 	local strRangeSet1 = "rangeSet"..tostring(rangeSet);
@@ -1015,9 +1030,11 @@ function realManualTransmission:selectGear(wantedGear, mappingValue)
 			lockedOut = true;
 		end;
 	end;
+
+	-- if wanted gear still isn't nil, we can try to shift into that gear. 
 		
 	-- now check if clutch is pressed enough to allow gearshift or if gears can be shifted under power 
-	if spec.clutchPercent < 0.24 or spec.gearsPowershift then
+	if wantedGear ~= nil and spec.clutchPercent < 0.24 or spec.gearsPowershift then
 		-- -1 means we want to go into neutral 
 		if wantedGear == -1 then 
 			spec.neutral = true;
@@ -1380,7 +1397,7 @@ function realManualTransmission:onUpdate(dt)
 						spec.lastNeutral = spec.neutral;
 					end;
 					
-					-- automatic downshifting a range at a certain speed ( V 0.5.1.6 )
+					-- automatic downshifting a range at a certain speed ( V 0.5.1.6 )KT
 					local speed = self.lastSpeed*3600;
 					if spec.rangeSet1 ~= nil then
 						if spec.rangeSet1.ranges[spec.currentRange1].autoDownshiftSpeed ~= nil then

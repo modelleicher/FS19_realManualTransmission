@@ -99,7 +99,8 @@
 		
 	<rangeSet2 powerShift="false" defaultRange="2" > <!-- powerShift defines if the range is powershiftable. defaultRange is self-explanatory -->
 		<range ratio="0.5" name="LO" />
-		<range ratio="1" name="HI" />
+		<range ratio="1" name="HI" >
+		</range>
 	</rangeSet2>
 	
 	<fluidClutch stallRpm="1340" />

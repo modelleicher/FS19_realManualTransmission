@@ -5,14 +5,15 @@
 
 
 
+rmtOverride = {};
+
 
 -- the getRequiredMotorRpmRange makes sure that the vehicle always operates in the by the PTO implement required RPM range.. E.g. exact RPM.
 -- with CVT/automatic gearbox this is what we want.. But with manual gearbox, this is not what we want.. 
 -- so we need to disable that mechanic.
-local oldGetRequiredMotorRpmRange = VehicleMotor.getRequiredMotorRpmRange;
-function newGetRequiredMotorRpmRange(self)
+function rmtOverride.newGetRequiredMotorRpmRange(self, superFunc)
 	if not self.vehicle.hasRMT or not self.vehicle.rmtIsOn then
-		return oldGetRequiredMotorRpmRange(self)
+		return superFunc(self)
 	else
 	
 		--local motorPtoRpm = math.min(PowerConsumer.getMaxPtoRpm(self.vehicle)*self.ptoMotorRpmRatio, self.maxRpm)
@@ -22,13 +23,14 @@ function newGetRequiredMotorRpmRange(self)
 		return self.minRpm, self.maxRpm
 	end;
 end
-VehicleMotor.getRequiredMotorRpmRange = newGetRequiredMotorRpmRange;
+VehicleMotor.getRequiredMotorRpmRange = Utils.overwrittenFunction(VehicleMotor.getRequiredMotorRpmRange, rmtOverride.newGetRequiredMotorRpmRange)
+
 
 local oldMotorUpdate = VehicleMotor.update;
-function newMotorUpdate(self, dt)
+function rmtOverride.newMotorUpdate(self, superFunc, dt)
 	local vehicle = self.vehicle
 	if not vehicle.hasRMT or not vehicle.rmtIsOn then
-		oldMotorUpdate(self, dt);	
+		superFunc(self, dt);	
 	else
 		
 			if next(vehicle.spec_motorized.differentials) ~= nil and vehicle.spec_motorized.motorizedNode ~= nil then
@@ -164,7 +166,7 @@ function newMotorUpdate(self, dt)
 
 	end;
 end;
-VehicleMotor.update = newMotorUpdate;
+VehicleMotor.update = Utils.overwrittenFunction(VehicleMotor.update, rmtOverride.newMotorUpdate);
 
 -- I'm trying to somehow get the sound to pitch above a modifier value of 1.. but so far no success
 -- anyhow.. this is how to overwrite a modifier return function..
@@ -179,21 +181,20 @@ VehicleMotor.update = newMotorUpdate;
 
 --SoundManager:registerModifierType(typeName, func, minFunc, maxFunc)
 
+
 -- return load only, not influenced by RPM 
-local oldGetMotorLoadPercentage = Motorized.getMotorLoadPercentage;
-function newGetMotorLoadPercentage(self)
+function rmtOverride.newGetMotorLoadPercentage(self, superFunc)
 	if not self.hasRMT or not self.rmtIsOn then
-		return oldGetMotorLoadPercentage(self);
+		return superFunc(self);
 	end;
 	return self.spec_motorized.smoothedLoadPercentage;
 end
-Motorized.getMotorLoadPercentage = newGetMotorLoadPercentage;
+Motorized.getMotorLoadPercentage = Utils.overwrittenFunction(Motorized.getMotorLoadPercentage, rmtOverride.newGetMotorLoadPercentage);
+
 	
--- self:getMotorRpmPercentage()
-local oldUpdateWheelsPhysics = WheelsUtil.updateWheelsPhysics;
-function newUpdateWheelsPhysics(self, dt, currentSpeed, acceleration, doHandbrake, stopAndGoBraking)
+function rmtOverride.newUpdateWheelsPhysics(self, superFunc, dt, currentSpeed, acceleration, doHandbrake, stopAndGoBraking)
 	if not self.hasRMT or not self.rmtIsOn then
-		oldUpdateWheelsPhysics(self, dt, currentSpeed, acceleration, doHandbrake, stopAndGoBraking);
+		superFunc(self, dt, currentSpeed, acceleration, doHandbrake, stopAndGoBraking);
 	else
 
 		local acceleratorPedal = 0
@@ -245,10 +246,7 @@ function newUpdateWheelsPhysics(self, dt, currentSpeed, acceleration, doHandbrak
 		if acceleration >= 0 and self.spec_motorized.motor.lastRealMotorRpm <= (self.spec_motorized.motor.minRpm +2) then
 			acceleration = 1;
 		end;
-				
-		-- if hand throttle is more than acceleration, use hand throttle value 
-		--acceleration = math.max(acceleration, self.spec_realManualTransmission.handThrottlePercent);
-		
+					
 	
 		-- if we are in neutral, don't accelerate
 		if self.spec_realManualTransmission.neutral then
@@ -359,6 +357,6 @@ function newUpdateWheelsPhysics(self, dt, currentSpeed, acceleration, doHandbrak
 	    self:brake(brakePedal)
 	end;
 end;
-WheelsUtil.updateWheelsPhysics = newUpdateWheelsPhysics;
+WheelsUtil.updateWheelsPhysics = Utils.overwrittenFunction(WheelsUtil.updateWheelsPhysics, rmtOverride.newUpdateWheelsPhysics)
 
 
