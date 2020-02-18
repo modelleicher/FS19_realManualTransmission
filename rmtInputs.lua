@@ -9,6 +9,11 @@ end;
 
 function rmtInputs.registerEventListeners(vehicleType)
 	SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", rmtInputs); -- this one is used to add the actionEvents
+	SpecializationUtil.registerEventListener(vehicleType, "onLoad", rmtInputs); -- this one is used to add the actionEvents	
+end;
+
+function rmtInputs:onLoad(savegame)
+	self.addRmtActionEvent = rmtInputs.addRmtActionEvent;
 end;
 
 -- actionEvent stuffs.. (this one is called each time the vehicle is entered)
@@ -20,8 +25,7 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 	-- add the actionEvents if vehicle is ready to have Inputs
 	if isActiveForInputIgnoreSelection then
 		-- non-specific keybindings, we want to use those even in vehicles without RMT 
-		local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_TOGGLE_ONOFF, self, rmtInputs.RMT_TOGGLE_ONOFF, false, true, false, true, nil);
-		g_inputBinding:setActionEventTextVisibility(actionEventId, false)	
+		self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_TOGGLE_ONOFF", "RMT_TOGGLE_ONOFF")	
 		
 		-- RMT specific keybindings, only add when vehicle has RMT 
 		if self.hasRMT then
@@ -30,24 +34,21 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 			-- non-synchronized Inputs: 
 			local actions = {"RMT_OPEN_MENU"}
 			for i = 1, #actions do
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction[tostring(actions[i])], self, rmtInputs[tostring(actions[i])], false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", actions[i], actions[i])
 			end;	
 			
 			-- synchronized Inputs 
 			-- basic ones 
 			local actions = {"RMT_HANDBRAKE"}
 			for i = 1, #actions do
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction[tostring(actions[i])], self, rmtInputs[tostring(actions[i])], false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", actions[i], actions[i])
 			end;	
 
 			-- direct gear buttons
 			if spec.gears ~= nil then
 				local actions = {"RMT_SHIFT_UP", "RMT_SHIFT_DOWN", "RMT_NEUTRAL", "RMT_SELECT_GEAR_1", "RMT_SELECT_GEAR_2", "RMT_SELECT_GEAR_3", "RMT_SELECT_GEAR_4", "RMT_SELECT_GEAR_5", "RMT_SELECT_GEAR_6", "RMT_SELECT_GEAR_7", "RMT_SELECT_GEAR_8"}
 				for i = 1, #actions do
-					local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction[tostring(actions[i])], self, rmtInputs.UIP_SYNCH_GEARS, true, true, false, true, nil);
-					g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+					self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", actions[i], "UIP_SYNCH_GEARS")
 				end;			
 			end;			
 
@@ -55,51 +56,61 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 			if spec.reverser ~= nil then
 				local actions = {"RMT_FORWARD", "RMT_REVERSE", "RMT_TOGGLE_REVERSER"}
 				for i = 1, #actions do
-					local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction[tostring(actions[i])], self, rmtInputs.UIP_SYNCH_REVERSER, false, true, false, true, nil);
-					g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+					self:addRmtActionEvent("BUTTON_SINGLE_ACTION", actions[i], "UIP_SYNCH_REVERSER")
 				end;
 			end;		
 
 			-- hand throttle 
-			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_UP, self, rmtInputs.RMT_HANDTHROTTLE, false, false, true, true, nil);
-			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_DOWN, self, rmtInputs.RMT_HANDTHROTTLE, false, false, true, true, nil);
-			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_HANDTHROTTLE_AXIS, self, rmtInputs.RMT_HANDTHROTTLE, false, false, true, true, nil);
-			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-			
+			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_HANDTHROTTLE_UP", "RMT_HANDTHROTTLE");
+			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_HANDTHROTTLE_DOWN", "RMT_HANDTHROTTLE");
+			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_HANDTHROTTLE_AXIS", "RMT_HANDTHROTTLE");
+
 			-- Range up / range down 
 			if spec.rangeSet1 ~= nil then
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP1, self, rmtInputs.UIP_SYNCH_RANGES, false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN1, self, rmtInputs.UIP_SYNCH_RANGES, false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-			end;
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_UP1", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_DOWN1", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_TOGGLE1", "UIP_SYNCH_RANGES");
+
+				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_1", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_2", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_3", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_4", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_5", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_6", "UIP_SYNCH_RANGES");																	
+			end; 
 			if spec.rangeSet2 ~= nil then
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP2, self, rmtInputs.UIP_SYNCH_RANGES, false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN2, self, rmtInputs.UIP_SYNCH_RANGES, false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_UP2", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_DOWN2", "UIP_SYNCH_RANGES");			
 			end;
 			if spec.rangeSet3 ~= nil then
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_UP3, self, rmtInputs.UIP_SYNCH_RANGES, false, true, false, true, nil);
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-				local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_RANGE_DOWN3, self, rmtInputs.UIP_SYNCH_RANGES, false, true, false, true, nil);	
-				g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_UP3", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_DOWN3", "UIP_SYNCH_RANGES");
+				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_TOGGLE3", "UIP_SYNCH_RANGES");			
 			end;
 		
 			-- clutch axis 
-			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_AXIS_CLUTCH, self, rmtInputs.actionEventClutch, false, false, true, true)
-			g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-			local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.RMT_CLUTCH_BUTTON, self, rmtInputs.RMT_CLUTCH_BUTTON, true, true, false, true, nil);
-			g_inputBinding:setActionEventTextVisibility(actionEventId, false)			
-
+			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_AXIS_CLUTCH", "actionEventClutch");
+			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_CLUTCH_BUTTON", "RMT_CLUTCH_BUTTON");
 	
 		end;
 	end;
 end;
 
- 
+function rmtInputs:addRmtActionEvent(type, inputAction, func, showHud)
+	local spec = self.spec_realManualTransmission
+	local _, actionEventId = nil;
+	if type == "BUTTON_SINGLE_ACTION" then
+		_ , actionEventId = self:addActionEvent(spec.actionEvents, InputAction[inputAction], self, rmtInputs[func], false, true, false, true);
+	elseif type == "BUTTON_DOUBLE_ACTION" then
+		_ , actionEventId = self:addActionEvent(spec.actionEvents, InputAction[inputAction], self, rmtInputs[func], true, true, false, true);
+	elseif type == "PRESSED_OR_AXIS" then
+		_ , actionEventId = self:addActionEvent(spec.actionEvents, InputAction[inputAction], self, rmtInputs[func], false, false, true, true);
+	end;
+	if not showHud then
+		g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+	end;
+end;
+
 function rmtInputs:RMT_OPEN_MENU()
 	if self.spec_rmtMenu ~= nil then
 		self.spec_rmtMenu.isOn = not self.spec_rmtMenu.isOn;
@@ -107,8 +118,6 @@ function rmtInputs:RMT_OPEN_MENU()
 		self.spec_enterable.cameras[self.spec_enterable.camIndex].isActivated = not self.spec_rmtMenu.isOn;
 	end;
 end;
-
-
 
 -- Handbrake button 
 function rmtInputs:RMT_HANDBRAKE(force, noEventSend)
@@ -179,6 +188,7 @@ function rmtInputs:UIP_SYNCH_RANGES(actionName, inputValue)
 	local spec = self.spec_realManualTransmission;
 	local dir = 0;
 	local index = 1;
+	local force = nil;
 	if inputValue == 1 then
 		if actionName == "RMT_RANGE_UP1" then
 			dir = 1;
@@ -196,15 +206,57 @@ function rmtInputs:UIP_SYNCH_RANGES(actionName, inputValue)
 		elseif actionName == "RMT_RANGE_DOWN3" then
 			dir = -1;
 			index = 3;
-		end;
+		elseif actionName == "RMT_RANGE_TOGGLE1" then
+			if spec.currentRange1 ~= nil and spec.currentRange1 < spec.rangeSet1.numberOfRanges then
+				dir = spec.rangeSet1.numberOfRanges;
+				index = 1;
+			elseif spec.currentRange1 == spec.rangeSet1.numberOfRanges then
+				dir = -spec.rangeSet1.numberOfRanges;
+				index = 1;
+			end;
+		elseif actionName == "RMT_RANGE_TOGGLE2" then
+			if spec.currentRange2 == 1 then
+				dir = spec.rangeSet2.numberOfRanges;
+				index = 2;
+			elseif spec.currentRange2 == spec.rangeSet2.numberOfRanges then
+				dir = -spec.rangeSet2.numberOfRanges;
+				index = 2;
+			end;		
+		elseif actionName == "RMT_RANGE_TOGGLE3" then
+			if spec.currentRange3 == 1 then
+				dir = spec.rangeSet2.numberOfRanges;
+				index = 3;
+			elseif spec.currentRange3 == spec.rangeSet3.numberOfRanges then
+				dir = -spec.rangeSet3.numberOfRanges;
+				index = 3;
+			end;	
+		elseif actionName == "RMT_RANGE_DIRECT_1" then
+			force = 1;
+			index = 1;
+		elseif actionName == "RMT_RANGE_DIRECT_2" then
+			force = 2;
+			index = 1;	
+		elseif actionName == "RMT_RANGE_DIRECT_3" then
+			force = 3;
+			index = 1;	
+		elseif actionName == "RMT_RANGE_DIRECT_4" then
+			force = 4;
+			index = 1;	
+		elseif actionName == "RMT_RANGE_DIRECT_5" then
+			force = 5;
+			index = 1;	
+		elseif actionName == "RMT_RANGE_DIRECT_6" then
+			force = 6;
+			index = 1;	
+		end;										
 	end;
 	
-	if dir ~= 0 then -- only continue if something changed 
+	if dir ~= 0 or force ~= nil then -- only continue if something changed 
 		--print("UIP_SYNCH_RANGES dir: "..tostring(dir).." index:"..tostring(index));
 		if not spec.switchGearRangeMapping then
-			self:processRangeInputs(dir, index, 0);
+			self:processRangeInputs(dir, index, force);
 		else
-			self:processGearInputs(0, dir);
+			self:processGearInputs(force, dir);
 		end;
 	end;
 end;

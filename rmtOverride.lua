@@ -123,26 +123,34 @@ function rmtOverride.newMotorUpdate(self, superFunc, dt)
 				-- get clutch RPM shut off motor if RPM gets too low , disable "auto clutch" of FS
 				local clutchRpm = math.abs(self:getClutchRotSpeed() *  9.5493);
 				
-				if clutchRpm < self.minRpm and clutchRpm > 0 then
+				if clutchRpm < self.minRpm and clutchRpm >= 0 then
 					clampedMotorRpm = (self.lastRealMotorRpm * 0.7) + (clutchRpm * 0.3);
 				end;
-				--renderText(0.1, 0.3, 0.02, "clutchRpm: "..tostring(clutchRpm));
+				
+				-- V 0.6.0.3 addition, stop engine if wheels stopped turning. (I think I had this here before and removed it for some reason, so if there's issues, its because of this)
+				if clutchRpm <= 0 then
+					vehicle:stopMotor()
+				end;
 
 			end;
 			
 			
-			if clampedMotorRpm < 500 then -- to do, add stall rpm variable 
+			if clampedMotorRpm < vehicle.spec_realManualTransmission.engineStallRpm then -- to do, add stall rpm variable 
 				-- stall the engine 
 				vehicle.spec_realManualTransmission.stallTimer = math.max(vehicle.spec_realManualTransmission.stallTimer - dt, 0);
 				if vehicle.spec_realManualTransmission.stallTimer == 0 then
 					vehicle:stopMotor()
 				end;
 			else
-				vehicle.spec_realManualTransmission.stallTimer = 500;
+				vehicle.spec_realManualTransmission.stallTimer = vehicle.spec_realManualTransmission.engineStallTimer;
+			end;
+			-- stall the engine if rpm = 0 (V 0.6.0.3 added this, not sure if I need it though since the wheels stop turning before smoothed RPM reaches 0)
+			if clampedMotorRpm <= 0 then
+				vehicle:stopMotor()
 			end;
 			
 
-			clampedMotorRpm = math.max(clampedMotorRpm, 500);
+			clampedMotorRpm = math.max(clampedMotorRpm, 0); -- V 0.6.0.3 changed from stallRpm to 0 because technically the engine can reach 0 rpm
 			
 			-- stupid smoothing 
 			if clampedMotorRpm < vehicle.spec_realManualTransmission.lastRealRpm * 0.73 or clampedMotorRpm > vehicle.spec_realManualTransmission.lastRealRpm * 1.27 then

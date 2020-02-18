@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="46">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.6.0.1</version>
+    <version>0.6.0.3</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -35,10 +35,20 @@
 
 		<text name="input_RMT_RANGE_UP1"><de>RMT: Gruppenset1 hochschalten</de><en>RMT: rangegroup1 shift up</en></text>
 		<text name="input_RMT_RANGE_DOWN1"><de>RMT: Gruppenset1 runterschalten</de><en>RMT: rangegroup1 shift down</en></text>
+		<text name="input_RMT_RANGE_TOGGLE1"><de>RMT: Gruppenset1 zw. max u. min umschalten</de><en>RMT: rangegroup1 toggle between max and min range</en></text>		
 		<text name="input_RMT_RANGE_UP2"><de>RMT: Gruppenset2 hochschalten</de><en>RMT: rangegroup2 shift up</en></text>
 		<text name="input_RMT_RANGE_DOWN2"><de>RMT: Gruppenset2 runterschalten</de><en>RMT: rangegroup2 shift down</en></text>
+		<text name="input_RMT_RANGE_TOGGLE2"><de>RMT: Gruppenset2 zw. max u. min umschalten</de><en>RMT: rangegroup2 toggle between max and min range</en></text>		
 		<text name="input_RMT_RANGE_UP3"><de>RMT: Gruppenset3 hochschalten</de><en>RMT: rangegroup3 shift up</en></text>
 		<text name="input_RMT_RANGE_DOWN3"><de>RMT: Gruppenset3 runterschalten</de><en>RMT: rangegroup3 shift down</en></text>
+		<text name="input_RMT_RANGE_TOGGLE3"><de>RMT: Gruppenset3 zw. max u. min umschalten</de><en>RMT: rangegroup3 toggle between max and min range</en></text>		
+
+		<text name="input_RMT_RANGE_DIRECT_1"><de>RMT: Gruppenset1 - Direktwahl Gruppe 1</de><en>RMT: rangegroup1 - direct selection range 1</en></text>	
+		<text name="input_RMT_RANGE_DIRECT_2"><de>RMT: Gruppenset1 - Direktwahl Gruppe 2</de><en>RMT: rangegroup1 - direct selection range 2</en></text>
+		<text name="input_RMT_RANGE_DIRECT_3"><de>RMT: Gruppenset1 - Direktwahl Gruppe 3</de><en>RMT: rangegroup1 - direct selection range 3</en></text>	
+		<text name="input_RMT_RANGE_DIRECT_4"><de>RMT: Gruppenset1 - Direktwahl Gruppe 4</de><en>RMT: rangegroup1 - direct selection range 4</en></text>
+		<text name="input_RMT_RANGE_DIRECT_5"><de>RMT: Gruppenset1 - Direktwahl Gruppe 5</de><en>RMT: rangegroup1 - direct selection range 5</en></text>	
+		<text name="input_RMT_RANGE_DIRECT_6"><de>RMT: Gruppenset1 - Direktwahl Gruppe 6</de><en>RMT: rangegroup1 - direct selection range 6</en></text>
 		
 		<text name="input_RMT_AXIS_CLUTCH"><de>RMT: Kupplungsachse (analog)</de><en>RMT: clutch axis</en></text>
 		<text name="input_RMT_CLUTCH_BUTTON"><de>RMT: Kupplungstaste/Button</de><en>RMT: clutch key/button</en></text>
@@ -116,19 +126,47 @@
 		<actionBinding action="RMT_RANGE_DOWN1">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>
+		<actionBinding action="RMT_RANGE_TOGGLE1">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
 		<actionBinding action="RMT_RANGE_UP2">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>
 		<actionBinding action="RMT_RANGE_DOWN2">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>
+		<actionBinding action="RMT_RANGE_TOGGLE2">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
 		<actionBinding action="RMT_RANGE_UP3">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>
 		<actionBinding action="RMT_RANGE_DOWN3">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>
-				
+		<actionBinding action="RMT_RANGE_TOGGLE3">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+
+		<actionBinding action="RMT_RANGE_DIRECT_1">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>				
+		<actionBinding action="RMT_RANGE_DIRECT_2">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_RANGE_DIRECT_3">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_RANGE_DIRECT_4">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>				
+		<actionBinding action="RMT_RANGE_DIRECT_5">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_RANGE_DIRECT_6">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>
+
 		<actionBinding action="RMT_AXIS_CLUTCH">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>		
@@ -177,12 +215,22 @@
 		<action name="RMT_SHIFT_DOWN" />
 		
 		<action name="RMT_RANGE_UP1" />
-		<action name="RMT_RANGE_DOWN1" />		
+		<action name="RMT_RANGE_DOWN1" />	
+		<action name="RMT_RANGE_TOGGLE1" />				
 		<action name="RMT_RANGE_UP2" />
 		<action name="RMT_RANGE_DOWN2" />
+		<action name="RMT_RANGE_TOGGLE2" />			
 		<action name="RMT_RANGE_UP3" />
 		<action name="RMT_RANGE_DOWN3" />
-		
+		<action name="RMT_RANGE_TOGGLE3" />	
+
+		<action name="RMT_RANGE_DIRECT_1" />					
+		<action name="RMT_RANGE_DIRECT_2" />
+		<action name="RMT_RANGE_DIRECT_3" />
+		<action name="RMT_RANGE_DIRECT_4" />					
+		<action name="RMT_RANGE_DIRECT_5" />
+		<action name="RMT_RANGE_DIRECT_6" />
+
 		<action name="RMT_FORWARD" />
 		<action name="RMT_REVERSE" />
 		<action name="RMT_TOGGLE_REVERSER" />
