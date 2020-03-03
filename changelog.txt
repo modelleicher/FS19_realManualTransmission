@@ -1,4 +1,7 @@
 -- Changelog:
+-- V 0.6.0.4 ###
+	-- fixed clutch button not working correctly since last update 
+	-- fixed issue of not restarting first try after stalling 
 -- V 0.6.0.3 ###
 	-- fixed disableGearTable Error
 	-- added engineStallRpm attribute option to set stallRpm per vehicle and not use default 500rpm (for example for really slow turning Lanz Bullogs)

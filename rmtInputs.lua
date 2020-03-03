@@ -90,7 +90,7 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 		
 			-- clutch axis 
 			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_AXIS_CLUTCH", "actionEventClutch");
-			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_CLUTCH_BUTTON", "RMT_CLUTCH_BUTTON");
+			self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_CLUTCH_BUTTON", "RMT_CLUTCH_BUTTON");
 	
 		end;
 	end;

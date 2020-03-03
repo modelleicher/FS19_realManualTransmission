@@ -4,12 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.0.3 ###
-	-- fixed disableGearTable Error
-	-- added engineStallRpm attribute option to set stallRpm per vehicle and not use default 500rpm (for example for really slow turning Lanz Bullogs)
-	-- added engineStallTimer attribute optionn to set the timer how many miliseconds the engine rpm needs to be below stall rpm in order to stall
-	-- added range toggle buttons to toggle between min and max range of each rangeSet with 1 button instead of up/down button
-	-- added direct selection buttons for rangeSet1 to select range 1 to 6 via direct buttons
+-- V 0.6.0.4 ###
+	-- fixed clutch button not working correctly since last update 
+	-- fixed issue of not restarting first try after stalling 
 
 realManualTransmission = {};
 

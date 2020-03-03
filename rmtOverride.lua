@@ -130,6 +130,8 @@ function rmtOverride.newMotorUpdate(self, superFunc, dt)
 				-- V 0.6.0.3 addition, stop engine if wheels stopped turning. (I think I had this here before and removed it for some reason, so if there's issues, its because of this)
 				if clutchRpm <= 0 then
 					vehicle:stopMotor()
+					clampedMotorRpm = self.minRpm;
+					vehicle.spec_realManualTransmission.lastRealRpm = self.minRpm;
 				end;
 
 			end;
@@ -140,6 +142,8 @@ function rmtOverride.newMotorUpdate(self, superFunc, dt)
 				vehicle.spec_realManualTransmission.stallTimer = math.max(vehicle.spec_realManualTransmission.stallTimer - dt, 0);
 				if vehicle.spec_realManualTransmission.stallTimer == 0 then
 					vehicle:stopMotor()
+					clampedMotorRpm = self.minRpm;
+					vehicle.spec_realManualTransmission.lastRealRpm = self.minRpm;
 				end;
 			else
 				vehicle.spec_realManualTransmission.stallTimer = vehicle.spec_realManualTransmission.engineStallTimer;
@@ -147,6 +151,8 @@ function rmtOverride.newMotorUpdate(self, superFunc, dt)
 			-- stall the engine if rpm = 0 (V 0.6.0.3 added this, not sure if I need it though since the wheels stop turning before smoothed RPM reaches 0)
 			if clampedMotorRpm <= 0 then
 				vehicle:stopMotor()
+				clampedMotorRpm = self.minRpm;
+				vehicle.spec_realManualTransmission.lastRealRpm = self.minRpm;
 			end;
 			
 
