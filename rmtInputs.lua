@@ -159,7 +159,7 @@ function rmtInputs:UIP_SYNCH_GEARS(actionName, inputValue)
 		end;	
 	end;
 
-	if inputValue == 1 then
+	if inputValue > 0.5 then
 		if actionName == "RMT_SHIFT_UP" then -- take care of the sequential shift buttons 
 			sequentialDir = 1;
 		elseif actionName == "RMT_SHIFT_DOWN" then
@@ -189,7 +189,7 @@ function rmtInputs:UIP_SYNCH_RANGES(actionName, inputValue)
 	local dir = 0;
 	local index = 1;
 	local force = nil;
-	if inputValue == 1 then
+	if inputValue > 0.5 then
 		if actionName == "RMT_RANGE_UP1" then
 			dir = 1;
 		elseif actionName == "RMT_RANGE_DOWN1" then

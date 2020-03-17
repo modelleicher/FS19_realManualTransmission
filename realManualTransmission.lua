@@ -4,9 +4,8 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.0.4 ###
-	-- fixed clutch button not working correctly since last update 
-	-- fixed issue of not restarting first try after stalling 
+-- V 0.6.0.5 ###
+	-- possible fix for Joystick/analog axis not working for shift up/down in gear or range 
 
 realManualTransmission = {};
 
