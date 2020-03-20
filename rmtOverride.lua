@@ -123,19 +123,20 @@ function rmtOverride.newMotorUpdate(self, superFunc, dt)
 				-- get clutch RPM shut off motor if RPM gets too low , disable "auto clutch" of FS
 				local clutchRpm = math.abs(self:getClutchRotSpeed() *  9.5493);
 				
-				if clutchRpm < self.minRpm and clutchRpm >= 0 then
+				-- clutch RPM is 0 / nil on clients in Multiplayer! 
+				
+				if clutchRpm < self.minRpm and clutchRpm > 0 then -- only if not 0 cause Multiplayer 
 					clampedMotorRpm = (self.lastRealMotorRpm * 0.7) + (clutchRpm * 0.3);
 				end;
 				
 				-- V 0.6.0.3 addition, stop engine if wheels stopped turning. (I think I had this here before and removed it for some reason, so if there's issues, its because of this)
-				if clutchRpm <= 0 then
+				if clutchRpm <= 0 and self.isServer then -- check if we're server 
 					vehicle:stopMotor()
 					clampedMotorRpm = self.minRpm;
 					vehicle.spec_realManualTransmission.lastRealRpm = self.minRpm;
 				end;
 
 			end;
-			
 			
 			if clampedMotorRpm < vehicle.spec_realManualTransmission.engineStallRpm then -- to do, add stall rpm variable 
 				-- stall the engine 

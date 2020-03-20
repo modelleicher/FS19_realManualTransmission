@@ -35,10 +35,10 @@ end;
 function realManualTransmission:onLoad(savegame)
 
 	-- TEMPORARY FIX FOR USE WITH REAL DIRT COLOR SINCE THAT SCRIPT DESTROYS loadMap Function for all other mods loading afterwards
-	if g_currentMission.rmtGlobals == nil then
-		g_currentMission.rmtGlobals = {};
-		g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
-	end;
+	--if g_currentMission.rmtGlobals == nil then
+	--	g_currentMission.rmtGlobals = {};
+	--	g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
+	--end;
 	--
 
 	self.loadGears = realManualTransmission.loadGears;
