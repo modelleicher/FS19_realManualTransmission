@@ -119,6 +119,7 @@ end;
 -- defaultValueOff = the value we want the indexStringDefaultVar to be when the checkbox is selected off 
 -- defaultValueOn = the value we want the indexStringDefaultVar to be when the checkbox is selected on 
 -- defaultValueIndexTable = if we want to use a particular index Table 
+
 function rmtMenu:addCheckBox(name, text, sizeX, sizeY, posX, posY, indexString, indexTable, indexStringDefaultVar, defaultValueOff, defaultValueOn, defaultValueIndexTable)
 	local checkBox = {};
 	checkBox.name = name;

@@ -4,8 +4,10 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.0.5 ###
-	-- possible fix for Joystick/analog axis not working for shift up/down in gear or range 
+-- V 0.6.0.7 ###
+	-- fixed 'FS19_realManualTransmission/events/processRangeInputsEvent.lua (28) : streamWriteInt8 argument nil error in Multiplayer  
+	-- addition of optional ratedRpm entry in the rmt config (ratedRpm -> rpm at which max speed is achieved) and fix for not reaching/overreaching speeds if the vehicle has maxRpm other than 2200
+	
 
 realManualTransmission = {};
 
@@ -109,7 +111,6 @@ function realManualTransmission:onLoad(savegame)
 	end;
 	
 	if self.hasRMT then
-
 		
 		-- calculate max speed 
 		local ratio = 1;
@@ -125,7 +126,7 @@ function realManualTransmission:onLoad(savegame)
 		if spec.highestGearSpeed ~= nil then	
 			spec.maxSpeedPossible = spec.highestGearSpeed * ratio * spec.finalRatio;
 		else
-			spec.maxSpeedPossible = 836 / ratio * spec.finalRatio;
+			spec.maxSpeedPossible = spec.ratioRpmConstant / ratio * spec.finalRatio;
 		end;
 		
 		--print("MAX SPEED POSSIBLE: "..tostring(spec.maxSpeedPossible));
@@ -197,8 +198,7 @@ function realManualTransmission:onLoad(savegame)
 		-- 
 		spec.useAutomaticClutch = false;
 		
-		self:addCheckBox("useAutoClutch", "use automatic clutch", 0.05, 0.05, 0.24, 0.68, "useAutomaticClutch", nil, "clutchPercentAuto", 1); 
-			
+		self:addCheckBox("useAutoClutch", "use automatic clutch", 0.05, 0.05, 0.24, 0.68, "useAutomaticClutch", nil, "clutchPercentAuto", 1, 1); 
 		spec.automaticClutch = {};
 		spec.automaticClutch.openTime = 600; --ms
 		spec.automaticClutch.closeTimeMax = 3000;
@@ -211,7 +211,7 @@ function realManualTransmission:onLoad(savegame)
 		
 		spec.automaticClutch.enableOpeningAtLowRPM = false;
 		
-		self:addCheckBox("enableOpeningAtLowRPM", "enable auto-clutch open at low RPM", 0.05, 0.05, 0.24, 0.63, "enableOpeningAtLowRPM", spec.automaticClutch, "clutchPercentAuto", 1); 
+		self:addCheckBox("enableOpeningAtLowRPM", "enable auto-clutch open at low RPM", 0.05, 0.05, 0.24, 0.63, "enableOpeningAtLowRPM", spec.automaticClutch, "clutchPercentAuto", 1, 1); 
 		
 		spec.automaticClutch.openingAtLowRPMTriggered = false;
 		spec.automaticClutch.openingAtLowRPMLimit = 950;
@@ -287,6 +287,8 @@ function realManualTransmission:onLoad(savegame)
 
 				-- add engine brake to brake value 
 				brake = math.min(1, brake + spec.wantedEngineBrake); 
+				
+				
 
 				-- if handbrake is enabled, brake
 				if spec.handBrake then
@@ -297,7 +299,7 @@ function realManualTransmission:onLoad(savegame)
 				if spec.reverser ~= nil and spec.reverser.lastBrakeForce > 0 then
 					brake = math.max(brake, spec.reverser.lastBrakeForce); 
 				end;
-			
+				
 				oldBrake(self, brake);
 			end;
 		end;
@@ -344,6 +346,14 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 				key = key.."realManualTransmissionConfigurations.realManualTransmissionConfiguration("..(self.configurations.realManualTransmission-1)..").";
 			end;
 		end;
+		
+		-- rated rpm at which max speed is reached, can be different to max rpm (if it doesn't exist it equals max rpm) 
+		spec.ratedRpm = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission("..i..")#ratedRpm"), self.spec_motorized.motor.maxRpm);
+		
+		-- 836 @2200rpm is giants "constant" for speed conversion -> the higher the rpm above 2200 lower the value to keep the same speed 
+		spec.ratioRpmConstant = 836 * (spec.ratedRpm / 2200 ) 
+		
+		print("RPM RATIO CONSTANT: "..tostring(spec.ratioRpmConstant));
 	
 		-- first, load gears from XML 
 		local gears, numberOfGears, highestSpeed = self:loadGears(xmlFile, key.."realManualTransmission("..i..").gears.gear(");
@@ -537,10 +547,10 @@ function realManualTransmission:loadGears(xmlFile, key)
 			break;
 		end;		
 		if gear.ratio == nil and gear.speed ~= nil then
-			gear.ratio = 836 / gear.speed; -- conversion for giants calculation 836 constant
+			gear.ratio = spec.ratioRpmConstant / gear.speed; -- conversion for giants calculation 836 constant
 		end;
 		if gear.speed == nil and gear.ratio ~= nil then 
-			gear.speed = 836 / gear.ratio; -- conversion from Ratio to speed
+			gear.speed = spec.ratioRpmConstant / gear.ratio; -- conversion from Ratio to speed
 		end;
 		
 		if gear.speed > highestSpeed then
@@ -658,6 +668,7 @@ end;
 
 function realManualTransmission:processRangeInputs(up, index, force, noEventSend)
 	-- send the event here, this is the last clienct & server function 
+	force = Utils.getNoNil(force, 0);
 	processRangeInputsEvent.sendEvent(self, up, index, force, noEventSend);
 	--print("process range inputs");
 	-- now start the server-stuff 
@@ -1339,7 +1350,7 @@ function realManualTransmission:onUpdate(dt)
 			spec.wantedGearRatio = self:calculateRatio()
 			
 			-- current wanted speed is needed for engine break calculation
-			spec.currentWantedSpeed = 836 / spec.wantedGearRatio;  -- (836 is a "giants constant for converting ratio to speed) 
+			spec.currentWantedSpeed = spec.ratioRpmConstant / spec.wantedGearRatio;  -- 
 
 
 			-- calculating hand throttle 
@@ -1554,9 +1565,9 @@ function realManualTransmission:onUpdate(dt)
 				renderText(0.7, 0.4, 0.02, "wantedLowBrakeForceScale: "..tostring(spec.wantedLowBrakeForceScale));
 				renderText(0.7, 0.42, 0.02, "lowBrakeForceScale: "..tostring(self.spec_motorized.motor.lowBrakeForceScale));
 				renderText(0.7, 0.44, 0.02, "reverserDirection: "..tostring(self.spec_drivable.reverserDirection));
-				renderText(0.7, 0.46, 0.02, "ratio range ratio: "..tostring(spec.wantedGearRatio / spec.gearRatioRange));
+
 				renderText(0.7, 0.48, 0.02, "wantedGearRatio: "..tostring(spec.wantedGearRatio));
-				renderText(0.7, 0.5, 0.02, "gearRatioRange: "..tostring(spec.gearRatioRange));
+
 				renderText(0.7, 0.52, 0.02, "actualLoadPercentage: "..tostring(self.spec_motorized.actualLoadPercentage));
 				renderText(0.7, 0.54, 0.02, "smoothedLoadPercentage: "..tostring(self.spec_motorized.smoothedLoadPercentage));
 				renderText(0.7, 0.56, 0.02, "reverseRatio: "..tostring(reverseRatio));
