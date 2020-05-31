@@ -4,9 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.0.7 ###
-	-- fixed 'FS19_realManualTransmission/events/processRangeInputsEvent.lua (28) : streamWriteInt8 argument nil error in Multiplayer  
-	-- addition of optional ratedRpm entry in the rmt config (ratedRpm -> rpm at which max speed is achieved) and fix for not reaching/overreaching speeds if the vehicle has maxRpm other than 2200
+-- V 0.6.0.8 ###
+	-- fixed rpm hud bug in Multiplayer
+	-- changed everything because 
 	
 
 realManualTransmission = {};
@@ -17,10 +17,7 @@ end;
 
 function realManualTransmission.initSpecialization()
 	g_configurationManager:addConfigurationType("realManualTransmission", "realManualTransmission", nil, nil, nil, nil, ConfigurationUtil.SELECTOR_MULTIOPTION) -- add config option 
-
-	--realManualTransmission.modifier_MOTOR_LOAD_GOV = g_soundManager:registerModifierType("MOTOR_LOAD_GOV", realManualTransmission.returnMotorLoadGov, realManualTransmission.returnMotorLoadGovMin, realManualTransmission.returnMotorLoadGovMax);
 end
-
 
 function realManualTransmission.registerEventListeners(vehicleType)
 	SpecializationUtil.registerEventListener(vehicleType, "onLoad", realManualTransmission);
@@ -28,43 +25,29 @@ function realManualTransmission.registerEventListeners(vehicleType)
 	SpecializationUtil.registerEventListener(vehicleType, "saveToXMLFile", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onPostLoad", realManualTransmission);
 	
-	SpecializationUtil.registerEventListener(vehicleType, "onWriteStream", realManualTransmission);
+	--SpecializationUtil.registerEventListener(vehicleType, "onWriteStream", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onWriteUpdateStream", realManualTransmission);
-	SpecializationUtil.registerEventListener(vehicleType, "onReadStream", realManualTransmission);
+	--SpecializationUtil.registerEventListener(vehicleType, "onReadStream", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onReadUpdateStream", realManualTransmission);
 end;
 
 function realManualTransmission:onLoad(savegame)
 
-	-- TEMPORARY FIX FOR USE WITH REAL DIRT COLOR SINCE THAT SCRIPT DESTROYS loadMap Function for all other mods loading afterwards
-	--if g_currentMission.rmtGlobals == nil then
-	--	g_currentMission.rmtGlobals = {};
-	--	g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
-	--end;
-	--
-
-	self.loadGears = realManualTransmission.loadGears;
-	self.loadRanges = realManualTransmission.loadRanges;
-	self.selectGear = realManualTransmission.selectGear;
-	self.selectRange = realManualTransmission.selectRange;
-	self.selectReverser = realManualTransmission.selectReverser;
 	self.loadFromXML = realManualTransmission.loadFromXML;
-	self.processGearInputs = realManualTransmission.processGearInputs;
 	self.returnRpmNonClamped = realManualTransmission.returnRpmNonClamped;
 	self.setHandBrake = realManualTransmission.setHandBrake;
-	self.processRangeInputs = realManualTransmission.processRangeInputs;
-	self.checkRangeLockOut = realManualTransmission.checkRangeLockOut;
 	self.processClutchInput = realManualTransmission.processClutchInput;
-	self.synchGearsAndRanges = realManualTransmission.synchGearsAndRanges;
 	self.processToggleOnOff = realManualTransmission.processToggleOnOff;
 	
 	self.calculateRatio = realManualTransmission.calculateRatio;
 	
+	--
 	self.hasRMT = false;
 	self.rmtIsOn = false;
 	
-	self.spec_realManualTransmission = {};  -- creating the table where all the variables are stored in
-	local spec = self.spec_realManualTransmission; -- this looks different to the example on the farmCon video. didn't work the other way though I assume mistake in their presentation
+	-- creating RMT-spec table.
+	self.spec_realManualTransmission = {};  
+	local spec = self.spec_realManualTransmission; 
 
 	local xmlFile = self.xmlFile;
 	
@@ -79,9 +62,6 @@ function realManualTransmission:onLoad(savegame)
 	local baseDirectory = StringUtil.splitString("/", self.baseDirectory);
 	local basegameConfigsXML = g_currentMission.rmtGlobals.basegameConfigsXML;
 
-	--print(tostring(baseDirectory[#baseDirectory-2]));
-	--print(tostring(configFile[#configFile]));	
-	
 	-- base directory "" -> basegame vehicle,  -- path ends in /pdlc/dlcName so its a DLC
 	if self.baseDirectory == "" or baseDirectory[#baseDirectory-2] == "pdlc" then 
 		print("RMT Debug: "..tostring(configFile[#configFile]).." is not a Mod.");
@@ -112,25 +92,12 @@ function realManualTransmission:onLoad(savegame)
 	
 	if self.hasRMT then
 		
-		-- calculate max speed 
-		local ratio = 1;
-		if spec.rangeSet1 ~= nil then 
-			ratio = ratio * spec.rangeSet1.highestRatio;
-		end;
-		if spec.rangeSet2 ~= nil then 
-			ratio = ratio * spec.rangeSet2.highestRatio;
-		end;
-		if spec.rangeSet3 ~= nil then 
-			ratio = ratio * spec.rangeSet3.highestRatio;
-		end;	
-		if spec.highestGearSpeed ~= nil then	
-			spec.maxSpeedPossible = spec.highestGearSpeed * ratio * spec.finalRatio;
-		else
-			spec.maxSpeedPossible = spec.ratioRpmConstant / ratio * spec.finalRatio;
-		end;
-		
-		--print("MAX SPEED POSSIBLE: "..tostring(spec.maxSpeedPossible));
-		
+		-- calculate max speeds
+		local maxSpeedPossible_classicTransmission = self:getMaxSpeedPossible_classicTransmission()
+
+		spec.maxSpeedPossible = maxSpeedPossible_classicTransmission * spec.finalRatio
+		-- TO DO - doesn't include reverser yet since its supposed to be 1 for forward anyways.. 
+
 		
 		-- back up gear ratios 
 		spec.minForwardGearRatioBackup = self.spec_motorized.motor.minForwardGearRatio;
@@ -150,11 +117,7 @@ function realManualTransmission:onLoad(savegame)
 		
 		-- neutral variable 
 		spec.neutral = true;
-		
-		spec.currentGear = spec.defaultGear;
-		
 		spec.isForward = true;
-		
 		--
 		spec.maxLowBrakeForceScale = 0.60;
 		spec.wantedLowBrakeForceScale = 0;
@@ -296,8 +259,8 @@ function realManualTransmission:onLoad(savegame)
 				end;
 				
 				-- if we have a reverser and the reverser is currently braking, check if the reverser is braking more than we are manually. If so, use the reverser brake value 
-				if spec.reverser ~= nil and spec.reverser.lastBrakeForce > 0 then
-					brake = math.max(brake, spec.reverser.lastBrakeForce); 
+				if self.spec_rmtReverser ~= nil and self.spec_rmtReverser.lastBrakeForce > 0 then
+					brake = math.max(brake, self.spec_rmtReverser.lastBrakeForce); 
 				end;
 				
 				oldBrake(self, brake);
@@ -335,7 +298,6 @@ function realManualTransmission:saveToXMLFile(xmlFile, key)
 	end;
 end;
 
-
 function realManualTransmission:loadFromXML(xmlFile, key, i)
 		local spec = self.spec_realManualTransmission;
 		
@@ -355,77 +317,10 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 		
 		print("RPM RATIO CONSTANT: "..tostring(spec.ratioRpmConstant));
 	
-		-- first, load gears from XML 
-		local gears, numberOfGears, highestSpeed = self:loadGears(xmlFile, key.."realManualTransmission("..i..").gears.gear(");
-		if numberOfGears ~= nil and numberOfGears > 0 then
-			spec.gears = gears;
-			spec.numberOfGears = numberOfGears;
-			spec.defaultGear = Utils.getNoNil(getXMLInt(xmlFile, key.."realManualTransmission("..i..").gears#defaultGear"), 1);
-			spec.gearsPowershift = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").gears#powerShift"), false);
-			spec.highestGearSpeed = highestSpeed;
-		end;
-		
-		-- now load rangeSet 1
-		local ranges, numberOfRanges, highestRatio = self:loadRanges(xmlFile, key.."realManualTransmission("..i..").rangeSet1.range(");
-		if numberOfRanges ~= nil and numberOfRanges > 0 then
-			spec.rangeSet1 = {}
-			spec.rangeSet1.ranges = ranges;
-			spec.rangeSet1.numberOfRanges = numberOfRanges;
-			spec.rangeSet1.defaultRange = Utils.getNoNil(getXMLInt(xmlFile, key.."realManualTransmission("..i..").rangeSet1#defaultRange"));
-			spec.rangeSet1.powerShift = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").rangeSet1#powerShift"), false);
-			spec.rangeSet1.hasNeutralPosition = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").rangeSet1#hasNeutralPosition"), false);
-			spec.rangeSet1.highestRatio = highestRatio;
-			spec.hasRangeSet1 = true;
-			spec.currentRange1 = spec.rangeSet1.defaultRange;
-		---	print("loaded rangeSet1");
-		end;
-		
-		-- load rangeSet 2
-		local ranges, numberOfRanges, highestRatio = self:loadRanges(xmlFile, key.."realManualTransmission("..i..").rangeSet2.range(");
-		if numberOfRanges ~= nil and numberOfRanges > 0 then
-			spec.rangeSet2 = {};
-			spec.rangeSet2.ranges = ranges;
-			spec.rangeSet2.numberOfRanges = numberOfRanges;
-			spec.rangeSet2.defaultRange = Utils.getNoNil(getXMLInt(xmlFile, key.."realManualTransmission("..i..").rangeSet2#defaultRange"));
-			spec.rangeSet2.powerShift = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").rangeSet2#powerShift"), false);
-			spec.rangeSet2.hasNeutralPosition = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").rangeSet2#hasNeutralPosition"), false);
-			spec.rangeSet2.highestRatio = highestRatio;
-			spec.hasRangeSet2 =  true;
-			spec.currentRange2 = spec.rangeSet2.defaultRange;
-		---	print("loaded rangeSet2");
-		end;
-		
-		-- load rangeSet 3
-		local ranges, numberOfRanges, highestRatio = self:loadRanges(xmlFile, key.."realManualTransmission("..i..").rangeSet3.range(");
-		if numberOfRanges ~= nil and numberOfRanges > 0 then
-			spec.rangeSet3 = {};
-			spec.rangeSet3.ranges = ranges;
-			spec.rangeSet3.numberOfRanges = numberOfRanges;
-			spec.rangeSet3.defaultRange = Utils.getNoNil(getXMLInt(xmlFile, key.."realManualTransmission("..i..").rangeSet3#defaultRange"));
-			spec.rangeSet3.powerShift = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").rangeSet3#powerShift"), false);
-			spec.rangeSet3.hasNeutralPosition = Utils.getNoNil(getXMLBool(xmlFile, key.."realManualTransmission("..i..").rangeSet3#hasNeutralPosition"), false);
-			spec.rangeSet3.highestRatio = highestRatio;
-			spec.hasRangeSet3 = true;
-			spec.currentRange3 = spec.rangeSet3.defaultRange;
-		--	print("loaded rangeSet3");
-		end;	
-		
-		-- load reverser 
-		local reverserType = getXMLString(xmlFile, key.."realManualTransmission("..i..").reverser#type");
-		if reverserType ~= nil and reverserType ~= "" then
-			spec.reverser = {};
-			spec.reverser.type = reverserType;
-			spec.reverser.forwardRatio = getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.ratios#forward");
-			spec.reverser.reverseRatio = getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.ratios#reverse");
-			spec.reverser.brakeAggressionBias = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission("..i..").reverser.settings#brakeAggressionBias"), 1);
-			spec.reverser.clutchTime = Utils.getNoNil(getXMLFloat(xmlFile, key.."realManualTransmission.reverser("..i..").settings#clutchTime"), 500);
-						
-			spec.reverser.isForward = true;
-			spec.reverser.wantForward = true;
-			spec.reverser.isBraking = false;
-			spec.reverser.isClutching = false;
-			spec.reverser.lastBrakeForce = 0;
-		end;
+		-- load classic transmission, gears and ranges 
+		self:loadFromXML_classicTransmission(xmlFile, key, i);
+
+		self:loadFromXML_reverser(xmlFile, key, i);
 		
 		-- fluid clutch (like Fendt Turbomatik)
 		local stallRpm = getXMLInt(xmlFile, key.."realManualTransmission("..i..").fluidClutch#stallRpm")
@@ -442,164 +337,6 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 		spec.engineStallTimer = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#engineStallTimer"), 500)
 
 end;
-
-
-function realManualTransmission:loadRanges(xmlFile, key)
-	local ranges = {};
-	local i = 0;
-	local highestRatio = 0;
-	while true do
-		local range = {};
-		-- load ratio (ranges don't use inverse ratio)
-		range.ratio = getXMLFloat(xmlFile, key..i..")#ratio")
-		if range.ratio == nil then
-			break;
-		end;
-		
-		-- load name and isReverse, if isReverse is true, this range is a reverse-range
-		range.name = getXMLString(xmlFile, key..i..")#name");
-		range.isReverse = getXMLBool(xmlFile, key..i..")#isReverse");
-		-- load disable gears 
-		local disableGears = getXMLString(xmlFile, key..i..").disableGears#gears");
-		if disableGears ~= nil and disableGears ~= "" then
-			local disableGearsTable = StringUtil.splitString(" ", disableGears);
-			range.disableGearsTable = {};
-			for _, gear in pairs(disableGearsTable) do
-				range.disableGearsTable[gear] = true;
-			end;
-			range.disableGearsType = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableGears#disableType"));
-		else
-			range.disableGearsTable = nil;
-		end;
-		
-		-- load disable ranges 
-		-- rangeSet1 
-		local disableRanges1 = getXMLString(xmlFile, key..i..").disableRangesSet1#ranges");
-		if disableRanges1 ~= nil and disableRanges1 ~= "" then
-			local disableRanges1Table = StringUtil.splitString(" ", disableRanges1);
-			range.disableRanges1Table = {};
-			for _, rangeKey in pairs(disableRanges1Table) do
-				range.disableRanges1Table[rangeKey] = true;
-			end;
-			range.disableRanges1Type = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableRangesSet1#disableType"));
-		else
-			range.disableRanges1Table = nil;
-		end;
-		-- rangeSet2 
-		local disableRanges2 = getXMLString(xmlFile, key..i..").disableRangesSet2#ranges");
-		if disableRanges2 ~= nil and disableRanges2 ~= "" then
-			local disableRanges2t = StringUtil.splitString(" ", disableRanges2);
-			range.disableRanges2Table = {};
-			for _, rangeKey in pairs(disableRanges2t) do
-				range.disableRanges2Table[rangeKey] = true;
-			end;
-			range.disableRanges2Type = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableRangesSet2#disableType"));
-		else
-			range.disableRanges2Table = nil;
-		end;		
-		-- rangeSet3 
-		local disableRanges3 = getXMLString(xmlFile, key..i..").disableRangesSet3#ranges");
-		if disableRanges3 ~= nil and disableRanges3 ~= "" then
-			local disableRanges3Table = StringUtil.splitString(" ", disableRanges3);
-			range.disableRanges3Table = {};
-			for _, rangeKey in pairs(disableRanges3Table) do
-				range.disableRanges3Table[rangeKey] = true;
-			end;
-			range.disableRanges3Type = Utils.getNoNil(getXMLString(xmlFile, key..i..").disableRangesSet3#disableType"));
-		else
-			range.disableRanges3Table = nil;
-		end;		
-		--
-		
-		-- V 0.5.1.6 automatic downshifting at certain speed 
-		local autoDownshiftSpeed = getXMLFloat(xmlFile, key..i..")#autoDownshiftSpeed");
-		if autoDownshiftSpeed ~= nil then
-			range.autoDownshiftSpeed = autoDownshiftSpeed;
-		end;
-		
-				
-		-- also store the highest ratio 
-		if range.ratio > highestRatio then
-			highestRatio = range.ratio;
-		end;
-		
-		table.insert(ranges, range);
-		i = i+1;
-	end;
-	local numberOfRanges = i;
-	return ranges, numberOfRanges, highestRatio;
-end;
-	
--- load gears function, we give XML-File and XML-File key, so its easier to use seperate config-files later since we just have to change the function-call 
-function realManualTransmission:loadGears(xmlFile, key)
-	local spec = self.spec_realManualTransmission;
-	spec.gearMappings = {};
-	local gears = {};
-	local highestSpeed = 0;
-	local i = 0;
-	while true do
-		local gear = {};
-		-- load ratio or speed 
-		gear.ratio = getXMLFloat(xmlFile, key..i..")#ratio")
-		gear.speed = getXMLFloat(xmlFile, key..i..")#speed");
-		-- we either can have ratio (inverse ratio) or speed, if we have speed in XML convert it to ratio 
-		if gear.ratio == nil and gear.speed == nil then
-			break;
-		end;		
-		if gear.ratio == nil and gear.speed ~= nil then
-			gear.ratio = spec.ratioRpmConstant / gear.speed; -- conversion for giants calculation 836 constant
-		end;
-		if gear.speed == nil and gear.ratio ~= nil then 
-			gear.speed = spec.ratioRpmConstant / gear.ratio; -- conversion from Ratio to speed
-		end;
-		
-		if gear.speed > highestSpeed then
-			highestSpeed = gear.speed;
-		end;
-		
-		
-		-- load name and isReverse, if isReverse is true, this gear is a reverse-gear
-		gear.name = Utils.getNoNil(getXMLString(xmlFile, key..i..")#name"), tostring(i+1));
-		gear.isReverse = getXMLBool(xmlFile, key..i..")#isReverse");
-		
-		-- we can map the gear to a gear-input that is not the number of the gear 
-		gear.mappedToGear = Utils.getNoNil(getXMLInt(xmlFile, key..i..")#mappedToGear"), i+1);
-		spec.gearMappings[gear.mappedToGear] = i+1;
-		
-		-- rangeAdjusts, if we want to adjust the range when switching gears 
-		local rangeAdjusts = {};
-		local r = 0;
-		while true do
-			local rangeAdjust = {};
-			rangeAdjust.from = getXMLInt(xmlFile, key..i..").rangeAdjust("..r..")#from");
-			rangeAdjust.range = getXMLInt(xmlFile, key..i..").rangeAdjust("..r..")#range");
-			rangeAdjust.rangeSetIndex = Utils.getNoNil(getXMLInt(xmlFile, key..i..").rangeAdjust("..r..")#rangeSetIndex"), 1);
-			if rangeAdjust.from == nil then
-				break;
-			else
-				table.insert(rangeAdjusts, rangeAdjust);
-			end;
-			r = r+1;
-		end;
-		if r ~= 0 then
-			gear.rangeAdjusts = rangeAdjusts;
-		end;
-		
-		-- speedmatching percentage 						
-		gear.speedMatchingPercentageUp = 1 + Utils.getNoNil(getXMLFloat(xmlFile, key..i..")#speedMatchingPercentageUp"), 0.25) 
-		gear.speedMatchingPercentageDown = 1 + Utils.getNoNil(getXMLFloat(xmlFile, key..i..")#speedMatchingPercentageDown"), 0.0) 
-		
-		-- insert gear to gears table 
-		table.insert(gears, gear);
-		i = i+1;
-	end;
-	local numberOfGears = i; -- count of all gears 
-	
-	-- return the gears table and the number of gears 
-	return gears, numberOfGears, highestSpeed;
-end;
-
-
 
 function realManualTransmission:setHandBrake(state, noEventSend)
 	setHandbrakeEvent.sendEvent(self, state, noEventSend);
@@ -623,85 +360,6 @@ function realManualTransmission:processClutchInput(inputValue, noEventSend)
 	end;
 end;
 
-
-function realManualTransmission:processGearInputs(gearValue, sequentialDir, noEventSend)
-	-- send the event here, this is the last clienct & server function 
-	processGearInputsEvent.sendEvent(self, gearValue, sequentialDir, noEventSend);
-	-- now start the server-stuff 
-	if self.isServer then
-		local spec = self.spec_realManualTransmission;
-		if sequentialDir == 0 then -- we called this via direct selection, so we select the gear or range directly 
-			self:selectGear(gearValue, gearValue);
-		end;
-		
-		if sequentialDir == 1 or sequentialDir == -1 then -- we called this via up/down keys e.g. sequential
-			-- just select the gear we want to.. see if we get lockOut back 
-			local lockOut = self:selectGear(spec.currentGear + (1*sequentialDir));
-			-- if we get locked out of the gear we want to shift in, try to shift down/up to the next gear and the next
-			-- to see if we can shift into the next allowed gear, stop if 1 or max is reached 
-			if lockOut then
-				if sequentialDir == 1 then -- upshifting 
-					local i = spec.currentGear + 1; 
-					while true do -- try for each gear upwards from currentGear 
-						local checkGear = math.min(spec.currentGear + i, spec.numberOfGears);
-						lockOut = self:selectGear(checkGear); 
-						if lockOut and checkGear == spec.numberOfGears or lockOut == false then -- stop if max gear is reached and still lockout, or lockout returned false 
-							break;
-						end;
-						i = i + 1;
-					end;
-				elseif sequentialDir == -1 then -- downshifting
-					local i = spec.currentGear - 1;
-					while true do -- try for each gear downwards from currentGear 
-						local checkGear = math.max(spec.currentGear - i, 1);
-						lockOut = self:selectGear(checkGear);
-						if lockOut and checkGear == 1 or lockOut == false then
-							break;
-						end;
-						i = i - 1;
-					end;
-				end;
-			end;
-		end;
-	end;
-end;
-
-function realManualTransmission:processRangeInputs(up, index, force, noEventSend)
-	-- send the event here, this is the last clienct & server function 
-	force = Utils.getNoNil(force, 0);
-	processRangeInputsEvent.sendEvent(self, up, index, force, noEventSend);
-	--print("process range inputs");
-	-- now start the server-stuff 
-	if self.isServer then
-		local spec = self.spec_realManualTransmission;
-
-		
-		local rangeSet = spec["rangeSet"..tostring(index)]; -- convert range set index to table 
-		local other1, other2;
-		if index == 1 then other1 = 2; other2 = 3 end;
-		if index == 2 then other1 = 1; other2 = 3 end;
-		if index == 3 then other1 = 1; other2 = 2 end;
-		
-		local wantedRange = spec["currentRange"..tostring(index)] + up;
-		
-		if force ~= 0 and force ~= nil then
-			wantedRange = force;
-		end;
-		
-		-- make sure our wantedRange is between min and max range we have 
-		wantedRange = math.max(1, math.min(wantedRange, rangeSet.numberOfRanges));
-		
-		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(wantedRange, index, other1, other2);
-		
-		if lockOutTrue then
-			wantedRange = nil;
-		end;	
-		
-		if wantedRange ~= nil then
-			self:selectRange(wantedRange, index, wantedNeutral);
-		end;
-	end;
-end;
 
 function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSend)
 	
@@ -737,328 +395,26 @@ function realManualTransmission:processToggleOnOff(state, isUserInput, noEventSe
 
 end;
 
-
-function realManualTransmission:checkRangeLockOut(wantedRange, rangeSet, other1, other2)
-	local spec = self.spec_realManualTransmission;
-	local strRangeSet1 = "rangeSet"..tostring(rangeSet);
-	local strRangeSet2 = "rangeSet"..tostring(other1);
-	local strRangeSet3 = "rangeSet"..tostring(other2);
-	
-	local strCurrentRange1 = "currentRange"..tostring(rangeSet);
-	local strCurrentRange2 = "currentRange"..tostring(other1);
-	local strCurrentRange3 = "currentRange"..tostring(other2);
-		
-	local strDisableRangesType1 = "disableRanges"..tostring(rangeSet).."Type";
-	local strDisableRangesType2 = "disableRanges"..tostring(other1).."Type";
-	local strDisableRangesType3 = "disableRanges"..tostring(other2).."Type";
-	local strDisableRangesTable1 = "disableRanges"..tostring(other1).."Table";
-	local strDisableRangesTable2 = "disableRanges"..tostring(other2).."Table";
-	
-	local lockOutTrue = false;
-	local wantedNeutral = false;  
-	
-	-- check if we can shift into this range or if it is disabled in the gear we are in 
-	if spec[strRangeSet1] ~= nil then  
-		if spec[strRangeSet1].ranges[wantedRange].disableGearsTable ~= nil and spec[strRangeSet1].ranges[wantedRange].disableGearsTable[tostring(spec.currentGear)] then 
-			if spec[strRangeSet1].ranges[wantedRange].disableGearsType == "lock" then -- we can not shift into this range because it is locked in this gear 
-				lockOutTrue = true;
-			elseif spec[strRangeSet1].ranges[wantedRange].disableGearsType == "neutral" then -- we can shift into the current range but we shift the gear to neutral 
-				wantedNeutral = true;
-			end;		
-		end;
-	end;
-	
-	-- check if the range we want to shift into is disabled in the current Range of the other 2 sets we are in 
-	if spec[strRangeSet2] ~= nil and spec[strRangeSet2].ranges[spec[strCurrentRange2]].disableRanges1Table ~= nil and spec[strRangeSet2].ranges[spec[strCurrentRange2]].disableRanges1Table[tostring(wantedRange)] then
-		if spec[strRangeSet2].ranges[spec[strCurrentRange2]][strDisableRangesType1] == "lock" then -- we can not shift into this range since it is locked 
-			lockOutTrue = true;
-		elseif spec[strRangeSet2].ranges[spec[strCurrentRange2]][strDisableRangesType1] == "neutral" then
-			-- not implemented yet 
-		end;
-	end;
-	if spec[strRangeSet3] ~= nil and spec[strRangeSet3].ranges[spec[strCurrentRange3]].disableRanges1Table ~= nil and spec[strRangeSet3].ranges[spec[strCurrentRange3]].disableRanges1Table[tostring(wantedRange)] then
-		if spec[strRangeSet3].ranges[spec[strCurrentRange3]][strDisableRangesType1] == "lock" then -- we can not shift into this range since it is locked 
-			lockOutTrue = true;
-		elseif spec[strRangeSet3].ranges[spec[strCurrentRange3]][strDisableRangesType1] == "neutral" then
-			-- not implemented yet 
-		end;
-	end;	
-	
-	-- check if the range we want to shift into disables any other ranges and locks us out that way 
-	if spec[strRangeSet1].ranges[wantedRange][strDisableRangesTable1] ~= nil and spec[strRangeSet1].ranges[wantedRange][strDisableRangesTable1][tostring(spec.currentRange2)] then
-		if spec[strRangeSet1].ranges[wantedRange][strDisableRangesType2] == "lock" then
-			lockOutTrue = true;
-		end;
-	end;
-	if spec[strRangeSet1].ranges[wantedRange][strDisableRangesTable2] ~= nil and spec[strRangeSet1].ranges[wantedRange][strDisableRangesTable2][tostring(spec.currentRange3)] then
-		if spec[strRangeSet1].ranges[wantedRange][strDisableRangesType3] == "lock" then
-			lockOutTrue = true;
-		end;
-	end;		
-
-	return lockOutTrue, wantedNeutral;
-end;
-
-
-function realManualTransmission:selectRange(wantedRange, rangeSetIndex, wantedNeutral)
-	local spec = self.spec_realManualTransmission;
-
-	local rangeSet = spec["rangeSet"..tostring(rangeSetIndex)]; -- convert range set index to table 	
-	-- check if clutch is pressed or range is powershift 
-	if spec.clutchPercent < 0.24 or rangeSet.powerShift then
-		-- return wantedRange 
-		spec["currentRange"..tostring(rangeSetIndex)] = wantedRange;
-		rangeSet.currentRange = spec["currentRange"..tostring(rangeSetIndex)]
-
-		-- if we want to shift gears into neutral due to range lockout, we do that now when the clutch is pressed.
-		if wantedNeutral then 
-			spec.neutral = true;
-		end;
-	end;				
-	
-	-- now for the automatic clutch 
-	-- check if we use auto clutch, check if gears aren't powershift. Check if we didn't already set the gear by manually pressing the clutch (or if we try to set the gear we are already in)
-	-- also check if the wantedGear is set to nil because its disabled in the range we are in. In that case, also don't open clutch 
-	if spec.useAutomaticClutch and not rangeSet.powerShift and rangeSet.currentRange ~= wantedRange and wantedRange ~= nil and wantedRange <= rangeSet.numberOfRanges then
-		-- start opening clutch 
-		spec.automaticClutch.wantOpen = true; 
-		spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
-		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
-		spec.automaticClutch.wantedRange = wantedRange; -- store wantedGear for later when clutch is open 
-		spec.automaticClutch.rangeSetIndex = rangeSetIndex; -- store wantedGear for later when clutch is open 
-	end;				
-	
-	-- if the rangeSet has a neutral position and we have buttonReleaseNeutral active, we want to turn into neutral 
-	-- this is only for real hardcore players that want to use a second H-Shifter for ranges :)
-	--if rangeSet.hasNeutralPosition and spec.buttonReleaseNeutral then
-	--	rangeSet.neutral = true;
-	--end;
-
-end;
-
-function realManualTransmission:selectGear(wantedGear, mappingValue)
-	local spec = self.spec_realManualTransmission;
-	local lockedOut = false;
-	
-	local gearChangeSuccess = false;
-	local previousGear = spec.currentGear;
-	
-	
-	-- check if wantedGear is not -1, -1 means we want to set it to neutral 
-	if wantedGear ~= -1 then
-		-- now check if wantedGear isn't the actual gear we want, in case we had a mappingValue assigned to the selectGear call 
-		if mappingValue ~= nil and spec.gearMappings[mappingValue] ~= nil then
-			wantedGear = spec.gearMappings[mappingValue];
-		end;
-		-- now make sure that wantedGear isn't above our highest gear 
-		wantedGear = math.max(1, math.min(wantedGear, spec.numberOfGears));
-	end;
-	
-	-- if wantedGear is not nil yet, we are pretty sure wantedGear is valid and the gear we want 
-	
-	-- next, see if we can even shift into that gear in the range we are currently in 
-	-- check for each of the rangeSets 
-	
-	if spec.rangeSet1 ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableGearsTable ~= nil and spec.rangeSet1.ranges[spec.currentRange1].disableGearsTable[tostring(wantedGear)] then 
-		-- it doesn't matter it the disableType is lock or neutral because we're not trying to shift into the range but into the disabled gear so its always locked out 
-		if spec.rangeSet1.ranges[spec.currentRange1].disableGearsType == "lock" or spec.rangeSet1.ranges[spec.currentRange1].disableGearsType == "neutral" then 
-			wantedGear = nil;
-			lockedOut = true;
-		end;
-	end;			
-	if spec.rangeSet2 ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableGearsTable ~= nil and spec.rangeSet2.ranges[spec.currentRange2].disableGearsTable[tostring(wantedGear)] then 
-		if spec.rangeSet2.ranges[spec.currentRange2].disableGearsType == "lock" or spec.rangeSet2.ranges[spec.currentRange1].disableGearsType == "neutral" then
-			wantedGear = nil;
-			lockedOut = true;
-		end;
-	end;		
-	if spec.rangeSet3 ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableGearsTable ~= nil and spec.rangeSet3.ranges[spec.currentRange3].disableGearsTable[tostring(wantedGear)] then 
-		if spec.rangeSet3.ranges[spec.currentRange3].disableGearsType == "lock" or spec.rangeSet3.ranges[spec.currentRange1].disableGearsType == "neutral" then 
-			wantedGear = nil;
-			lockedOut = true;
-		end;
-	end;
-
-	-- if wanted gear still isn't nil, we can try to shift into that gear. 
-		
-	-- now check if clutch is pressed enough to allow gearshift or if gears can be shifted under power 
-	if wantedGear ~= nil and spec.clutchPercent < 0.24 or spec.gearsPowershift then
-		-- -1 means we want to go into neutral 
-		if wantedGear == -1 then 
-			spec.neutral = true;
-			spec.lastGear = spec.currentGear;
-			gearChangeSuccess = true;
-		else
-			-- return wanted gear 
-			-- sometimes if we change gear we also want to adjust the range 
-			-- this is usually dependent on the previous gear we were in
-			if spec.gears[wantedGear].rangeAdjusts ~= nil then
-				--print("we have range adjusts");
-				for _, rangeAdjust in pairs(spec.gears[wantedGear].rangeAdjusts) do
-					if rangeAdjust.from == spec.lastGear then
-						self:selectRange(rangeAdjust.range, 1, 1)
-					end;
-				end;
-			end;
-
-			if wantedGear ~= nil then
-				spec.currentGear = wantedGear;
-				spec.neutral = false; -- set neutral to false if we are in gear 
-				spec.lastGear = spec.currentGear;
-				gearChangeSuccess = true;
-			end;
-		end;
-	end;
-	
-	-- stuff that needs to happen after we changed gear 
-	if gearChangeSuccess and not spec.neutral then 
-		-- check if there is automatic range matching
-		if spec.autoRangeMatching then
-			-- get the current actual speed 
-			local currentSpeed = self.lastSpeed*3600;
-			local rangeSet = spec.rangeSet1;
-			local lastClosestTo1 = 0;
-			local idealRange = nil;
-			
-			-- go through all the ranges, see which one matches the closest to the current speed 
-			for i = 1, rangeSet.numberOfRanges do 
-			
-				-- first, get the max speed in the possible range 
-				--local speedMax = spec.gears[spec.currentGear].speed * rangeSet.ranges[i].ratio * rangeRatio * spec.finalRatio; -- V 0.5.1.4 removed this 
-				
-				local speedMax = self:calculateRatio(true, spec.currentGear, i);
-				-- now calculate the min speed in that possible range 
-				local speedMin = speedMax * (self.spec_motorized.motor.minRpm / self.spec_motorized.motor.maxRpm);
-				-- we don't want to be at minRpm / idle though, so add 26% speed 
-				--speedMin = speedMin * 1.26;
-				-- now get the average speed
-				local speedAverage = (speedMin + speedMax) / 2;
-				
-				-- old way 
-				-- now calculate how far away we are from the current speed 
-				--local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
-			
-				-- new way  
-				-- V 0.5.1.5 added optional increase/decrease percentage for each gear via XML file, defaults to 25%
-				local speedMatchingPercentageUp = spec.gears[spec.currentGear].speedMatchingPercentageUp;
-				local speedMatchingPercentageDown = spec.gears[spec.currentGear].speedMatchingPercentageDown;
-				--print(speedMatchingPercentageUp);
-				local difference = math.min(currentSpeed, speedAverage) / math.max(currentSpeed, speedAverage)
-				if previousGear > spec.currentGear then -- we downshifted 
-					difference = math.min(currentSpeed*speedMatchingPercentageDown, speedMax) / math.max(currentSpeed*speedMatchingPercentageDown, speedMax) -- if we downshifted we want a gear that we reach at the top of our rev range with the current speed 
-					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference);
-				elseif previousGear < spec.currentGear then -- we upshifted 
-					difference = math.min(currentSpeed*speedMatchingPercentageUp, speedMax) / math.max(currentSpeed*speedMatchingPercentageUp, speedMax) -- if we upshifted we want a gear that we reach at the bottom of our rev range with the current speed 
-					--print("Range currently: "..i.." speedMax: "..speedMax.." speedMin: "..speedMin.." speedAverage: "..speedAverage.." difference: "..difference.." currentSpeed+: "..currentSpeed.." curSpeedX: "..(currentSpeed*speedMatchingPercentageUp));
-				end;
-				
-				
-				-- if the current difference is smaller than the last closest to 1, we have a new closest range 
-				if difference > lastClosestTo1 then
-					idealRange = i; -- our new ideal range is 1
-					lastClosestTo1 = difference; -- our new closestTo1 is our difference 
-				end;
-			end;
-			
-			if idealRange ~= nil then
-				self:processRangeInputs(1, 1, idealRange);
-			end;
-					
-		end;
-	
-	end;
-	
-	-- now for the automatic clutch 
-	-- check if we use auto clutch, check if gears aren't powershift. Check if we didn't already set the gear by manually pressing the clutch (or if we try to set the gear we are already in)
-	-- also check if the wantedGear is set to nil because its disabled in the range we are in. In that case, also don't open clutch 
-	if spec.useAutomaticClutch and not spec.gearsPowershift and spec.currentGear ~= wantedGear and wantedGear ~= nil and wantedGear <= spec.numberOfGears then
-		-- start opening clutch 
-		spec.automaticClutch.wantOpen = true; 
-		spec.automaticClutch.timer = spec.automaticClutch.openTime; -- put openTime in timer 
-		spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- store the max timer value, we need that later 
-		spec.automaticClutch.wantedGear = wantedGear; -- store wantedGear for later when clutch is open 		
-	end;
-	
-	-- if inputValue is 0 and we have buttonReleaseNeutral active (automatically go back to neutral if you stop "pressing" the gear button
-	-- then go to neutral (that way if it goes to neutral with Gearshifters like Logitech G27 if you get out of gear on the shifter)
-	return lockedOut;
-end;
-
-
-function realManualTransmission:selectReverser(isForward, noEventSend)
-	selectReverserEvent.sendEvent(self, isForward, noEventSend);
-	local rev = self.spec_realManualTransmission.reverser;
-	
-	-- first, check which reverser type it is
-	if rev.type == "preselect" then 
-		rev.wantForward = isForward; -- set wanted forward value 
-		rev.allowDirectionChange = true;
-	elseif rev.type == "normal" then
-		-- check if we even need to change direction
-		if rev.isForward ~= isForward then
-			-- now, see if we are braking, if not, do so
-			if not rev.isBraking then
-				rev.isBraking = true;
-			end;
-			rev.wantForward = isForward; -- set wanted forward value 
-		end;
-	elseif rev.type == "clutchOnly" then
-		if self.spec_realManualTransmission.clutchPercent < 0.2 then -- only allow direction change if clutch is pressed 
-			rev.wantForward = isForward; -- set wanted forward value 
-			rev.allowDirectionChange = true;
-		end;
-	end;
-
-end;
-
 -- function to calculate the current ratio or speed given all ranges, gears, reversers and so on.
 -- can either be used to calculate current actual speed or if given other than current paramenters to calculate possible speed in a different gear/range/setting etc.
 function realManualTransmission:calculateRatio(returnSpeed, gear, range1, range2, range3, reverserDirection)
 	local spec = self.spec_realManualTransmission;
-	gear = Utils.getNoNil(gear, spec.currentGear);
-	range1 = Utils.getNoNil(range1, spec.currentRange1);
-	range2 = Utils.getNoNil(range2, spec.currentRange2);
-	range3 = Utils.getNoNil(range3, spec.currentRange3);
-	if spec.reverser ~= nil then
-		reverserDirection = Utils.getNoNil(reverserDirection, spec.reverser.isForward);
-	end;
-	
-	-- first, get total ranges ratio between all 3 possible rangeSets 
-	local rangeRatio = 1;
-	if spec.rangeSet1 ~= nil then
-		rangeRatio = rangeRatio * spec.rangeSet1.ranges[range1].ratio;
-	end;
-	if spec.rangeSet2 ~= nil then
-		rangeRatio = rangeRatio * spec.rangeSet2.ranges[range2].ratio;
-	end;
-	if spec.rangeSet3 ~= nil then	
-		rangeRatio = rangeRatio * spec.rangeSet3.ranges[range3].ratio;
-	end;				
-	
-	-- get the reverser ratio 
-	local reverserRatio = 1;
-	if spec.reverser ~= nil then
-		if reverserDirection then
-			reverserRatio = spec.reverser.forwardRatio;
-		else
-			reverserRatio = spec.reverser.reverseRatio;
-		end;
-	end;
-	
-	-- get gear ratio 
-	local gearRatio = 1;
-	if spec.gears ~= nil then
-		gearRatio = spec.gears[gear].ratio;
-	end;	
 
+	-- get reverser direction and ratio 
+	local _, reverserRatioGet = self:getDirectionAndRatio_reverser(reverserDirection)
+
+	local _, classicTransmissionRatioGet = self:getDirectionAndRatio_classicTransmission(gear, range1, range2, range3)
 
 	if returnSpeed then
-		local speed = spec.gears[gear].speed * rangeRatio * reverserRatio * spec.finalRatio;
+		local speed = spec.maxSpeedPossible * classicTransmissionRatioGet * reverserRatioGet * spec.finalRatio;
+		print("return speed: "..tostring(endRatio))
 		return speed;
 	end;
 	
-	local endRatio = gearRatio / rangeRatio / reverserRatio / spec.finalRatio;
+	local endRatio = classicTransmissionRatioGet / reverserRatioGet / spec.finalRatio;
 		
+	print("return end ratio: "..tostring(endRatio))
+
 	return endRatio;
 end;
 function realManualTransmission:onUpdate(dt) 
@@ -1183,12 +539,6 @@ function realManualTransmission:onUpdate(dt)
 				-- calculate engine brake 
 				local wantedEngineBrake =  (1 - (spec.currentWantedSpeed / (spec.maxSpeedPossible*1.1))) * spec.engineBrakeBase * spec.engineBrakeModifier * ((rpm / motor.maxRpm)^2) * ((spec.clutchPercent - 0.199)*1.25);
 				
-				
-				-- set lastGear to nil if we are in neutral and clutch is engaged 
-				if spec.clutchPercent > 0.9 and spec.neutral then
-					spec.lastGear = nil;
-				end;
-		
 
 				-- now find out if we are off-load and engine is in pushmode
 				local axisWantedRPM = 0;
@@ -1230,46 +580,12 @@ function realManualTransmission:onUpdate(dt)
 					renderText(0.1, 0.5, 0.02, "axisWantedRPM: "..tostring(axisWantedRPM).." rpm "..tostring(rpm).." diff: "..tostring(rpm / axisWantedRPM).." gr: "..tostring(axisWantedRPM > rpm));
 				end;
 				
-				-- ### 
 				-- now for the calculation of the actual gear ratio including the clutch calculation 
 				if self.isServer then
-					
-					-- check if anything changed, if so, synchronize with the clients 
-					if spec.currentGear ~= spec.lastGear1 or spec.currentRange1 ~= spec.lastRange1 or spec.currentRange2 ~= spec.lastRange2 or spec.currentRange3 ~= spec.lastRange3 or spec.neutral ~= spec.lastNeutral then
-						self:synchGearsAndRanges(spec.currentGear, spec.currentRange1, spec.currentRange2, spec.currentRange3, spec.neutral);
+					spec.neutral = self.spec_rmtClassicTransmission.neutral;
 
-						spec.lastGear1 = spec.currentGear;
-						spec.lastRange1 = spec.currentRange1;
-						spec.lastRange2 = spec.currentRange2;
-						spec.lastRange3 = spec.currentRange3;
-						spec.lastNeutral = spec.neutral;
-					end;
-					
-					-- automatic downshifting a range at a certain speed ( V 0.5.1.6 )KT
-					local speed = self.lastSpeed*3600;
-					if spec.rangeSet1 ~= nil then
-						if spec.rangeSet1.ranges[spec.currentRange1].autoDownshiftSpeed ~= nil then
-							if speed > spec.rangeSet1.ranges[spec.currentRange1].autoDownshiftSpeed then
-								self:processRangeInputs(-1, 1);
-							end;
-						end;
-					end;
-					if spec.rangeSet2 ~= nil then
-						if spec.rangeSet2.ranges[spec.currentRange2].autoDownshiftSpeed ~= nil then
-							if speed > spec.rangeSet2.ranges[spec.currentRange2].autoDownshiftSpeed then
-								self:processRangeInputs(-1, 2);
-							end;
-						end;
-					end;
-					if spec.rangeSet3 ~= nil then
-						if spec.rangeSet3.ranges[spec.currentRange3].autoDownshiftSpeed ~= nil then
-							if speed > spec.rangeSet3.ranges[spec.currentRange3].autoDownshiftSpeed then
-								self:processRangeInputs(-1, 3);
-							end;
-						end;		
-					end;
-					--
 
+					-- don't outsource ratio calculations that has to stay in main script 
 					local actualGearRatio = 0;
 					local currentGearRatio = 0;
 				
@@ -1331,6 +647,8 @@ function realManualTransmission:onUpdate(dt)
 					if spec.debug then
 						renderText(0.1, 0.6, 0.02, "actualGearRatio: "..tostring(actualGearRatio).." currentGearRatio: "..tostring(currentGearRatio).." wheelSpeed: "..tostring(wheelSpeed).." lastRealMotorRpm: "..tostring(motor.lastRealMotorRpm));
 					end;
+
+				
 					
 					-- finally set the gear ratio values 
 					motor.minForwardGearRatio = spec.lastActualRatio;
@@ -1349,6 +667,8 @@ function realManualTransmission:onUpdate(dt)
 			-- now calculate wanted gear ratio with gear and rangeRatio and final ratio 
 			spec.wantedGearRatio = self:calculateRatio()
 			
+			print(spec.wantedGearRatio)
+			
 			-- current wanted speed is needed for engine break calculation
 			spec.currentWantedSpeed = spec.ratioRpmConstant / spec.wantedGearRatio;  -- 
 
@@ -1360,42 +680,6 @@ function realManualTransmission:onUpdate(dt)
 				spec.handThrottlePercent = math.min(1, spec.handThrottlePercent + 0.001*dt);
 			end;
 				
-			-- calculating the reverser 
-			if spec.reverser ~= nil then
-				
-				-- if the reverser is in brake-mode, calculate brake force and open clutch 
-				if spec.reverser.isBraking then 
-					-- clutch 
-					if not spec.automaticClutch.wantOpen and not spec.automaticClutch.isOpen then
-						spec.automaticClutch.wantOpen = true;
-						spec.automaticClutch.timer = 450;
-						spec.automaticClutch.timerMax = spec.automaticClutch.timer;
-						spec.automaticClutch.preventClosing = true;
-						spec.automaticClutch.reverserFlag = true;
-					end;
-					
-					-- brake force 
-					spec.reverser.lastBrakeForce = 1 * spec.reverser.brakeAggressionBias; 
-					if math.abs(self.lastSpeed*3600) < 0.7 then
-						--spec.reverser.lastBrakeForce = spec.reverser.lastBrakeForce * self.lastRealSpeed;
-						spec.reverser.isBraking = false;
-						spec.reverser.allowDirectionChange = true;
-					end;			
-					
-				else
-					spec.reverser.lastBrakeForce = 0;
-				end;
-			
-				-- if the clutch is open, change direction 
-				if spec.clutchPercent < 0.2 and spec.reverser.allowDirectionChange then 
-					spec.reverser.isForward = spec.reverser.wantForward;
-					spec.automaticClutch.preventClosing = false;
-					spec.reverser.allowDirectionChange = nil;
-				end;
-				-- the clutch is automatically closing after it opened anyways, so nothing more to do here 
-			end;
-		
-			
 			-- calculating the automatic clutch 
 			--if spec.useAutomaticClutch or spec.reverser ~= nil and spec.reverser.type == "normal" then
 			if spec.automaticClutch ~= nil then
@@ -1442,7 +726,7 @@ function realManualTransmission:onUpdate(dt)
 						
 						-- if the clutch was opened by the reverser we calculate the clutch time differently 
 						if spec.automaticClutch.reverserFlag then -- the lower the rpm the slower the clutch will close 
-							spec.automaticClutch.timer = spec.reverser.clutchTime;
+							spec.automaticClutch.timer = self.spec_rmtReverser.clutchTime;
 							spec.automaticClutch.timerMax = spec.automaticClutch.timer; -- we need that for calculating how far the clutch is closed 	
 						else
 							spec.automaticClutch.timer = (spec.automaticClutch.closeTimeMax - spec.automaticClutch.closeTimeMin) * ratio + spec.automaticClutch.closeTimeMin; -- maxTime * ratio is our closing time 
@@ -1522,44 +806,29 @@ function realManualTransmission:onUpdate(dt)
 			end;
 			
 
-			
-			-- direction selection
-			-- check if the gear or range we are in is reverse
+
 			local reverseRatio = 1; -- we start out in forward mode 
-			if spec.gears ~= nil and spec.gears[spec.currentGear].isReverse then
-				reverseRatio = reverseRatio * -1; -- if the gear is reverse, * -1 puts us in reverse 
+
+			local classicTransmissionDir, _ = self:getDirectionAndRatio_classicTransmission()
+			if not classicTransmissionDir then
+				reverseRatio = reverseRatio * -1;	
 			end;
-			if spec.rangeSet1 ~= nil then
-				if spec.rangeSet1.ranges[spec.currentRange1].isReverse then
-					reverseRatio = reverseRatio * -1; -- if the range is reverse, -1 puts us in reverse. If we already are in reverse, it puts us back forward 
-				end;
+
+			local reverserDir, _ = self:getDirectionAndRatio_reverser()
+			if not reverserDir then
+				reverseRatio = reverseRatio * -1;	
 			end;
-			if spec.rangeSet2 ~= nil then
-				if spec.rangeSet2.ranges[spec.currentRange2].isReverse then
-					reverseRatio = reverseRatio * -1; -- same here. This is useless kinda, but IRL if you had 2 different ranges or gears with reverse-sets thats exactly what would happen 
-				end;
-			end;
-			if spec.rangeSet3 ~= nil then
-				if spec.rangeSet3.ranges[spec.currentRange3].isReverse then
-					reverseRatio = reverseRatio * -1; -- not sure if there will ever be such a configuration in FS, I don't know a vehicle that has such a configuration.
-				end;									-- but as my aim is to create configuration options that would be realistically possible and work like IRL, I'll do it anyways 
-			end;
-			-- check if we have reverser 
-			if spec.reverser ~= nil then
-				if not spec.reverser.isForward then 
-					reverseRatio = reverseRatio * -1;
-				end;
-			
-			end;
+
 			-- so now we have current wanted range and direction, also apply to spec.isForward variable 
 			if reverseRatio == 1 then
 				spec.isForward = true;
 			else
 				spec.isForward = false;
 			end;
-			
+	
 			-- apply reverse 
 			self.spec_drivable.reverserDirection = reverseRatio;	
+
 
 			if spec.debug then
 				renderText(0.7, 0.4, 0.02, "wantedLowBrakeForceScale: "..tostring(spec.wantedLowBrakeForceScale));
@@ -1585,54 +854,6 @@ function realManualTransmission:onUpdate(dt)
 				
 		end;
 	end;
-end;
-
-
-function realManualTransmission:synchGearsAndRanges(currentGear, currentRange1, currentRange2, currentRange3, neutral, noEventSend)
-	currentGear = Utils.getNoNil(currentGear, 1);
-	currentRange1 = Utils.getNoNil(currentRange1, 1);
-	currentRange2 = Utils.getNoNil(currentRange2, 1);
-	currentRange3 = Utils.getNoNil(currentRange3, 1);
-	neutral = Utils.getNoNil(neutral, false);
-	--print("synchGearsAndRanges vor Event: "..tostring(neutral));
-	synchGearsAndRangesEvent.sendEvent(self, currentGear, currentRange1, currentRange2, currentRange3, neutral, noEventSend);
-	local spec = self.spec_realManualTransmission;
-	spec.currentGear = currentGear;
-	spec.currentRange1 = currentRange1;
-	spec.currentRange2 = currentRange2;
-	spec.currentRange3 = currentRange3;
-	spec.neutral = neutral;
-	--print("synchGearsAndRanges nach Event: "..tostring(neutral));	
-end;
-
-
-function realManualTransmission:onReadStream(streamId, connection)
-	if self.hasRMT then
-		local isOn = Utils.getNoNil(streamReadBool(streamId), false);
-		local currentGear = Utils.getNoNil(streamReadInt8(streamId), 1);
-		local currentRange1 = Utils.getNoNil(streamReadInt8(streamId), 1);
-		local currentRange2 = Utils.getNoNil(streamReadInt8(streamId), 1);
-		local currentRange3 = Utils.getNoNil(streamReadInt8(streamId), 1);
-		local neutral = Utils.getNoNil(streamReadBool(streamId), false);
-		self.rmtIsOn = isOn;
-		self:synchGearsAndRanges(currentGear, currentRange1, currentRange2, currentRange3, neutral, true);
-	end;
-		--print("onReadStream called");
-end;
-
-function realManualTransmission:onWriteStream(streamId, connection)
-	local spec = self.spec_realManualTransmission;
-	
-	if self.hasRMT then
-		streamWriteBool(streamId, Utils.getNoNil(self.rmtIsOn, false));
-	
-		streamWriteInt8(streamId, Utils.getNoNil(spec.currentGear, 1));
-		streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange1, 1));
-		streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange2, 1));
-		streamWriteInt8(streamId, Utils.getNoNil(spec.currentRange3, 1));
-		streamWriteBool(streamId, Utils.getNoNil(spec.neutral, false));
-	end;
-	--print("onWriteStream called");
 end;
 
 function realManualTransmission:onWriteUpdateStream(streamId, connection, dirtyMask)

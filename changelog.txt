@@ -1,6 +1,8 @@
 -- Changelog:
 
-
+-- V 0.6.0.8 ###
+	-- fixed rpm hud bug in Multiplayer
+	-- changed everything because 
 -- V 0.6.0.7 ###
 	-- fixed 'FS19_realManualTransmission/events/processRangeInputsEvent.lua (28) : streamWriteInt8 argument nil error in Multiplayer  
 	-- addition of optional ratedRpm entry in the rmt config (ratedRpm -> rpm at which max speed is achieved) and fix for not reaching/overreaching speeds if the vehicle has maxRpm other than 2200

@@ -1,7 +1,5 @@
 -- by modelleicher
--- temporary end goal: working manual gearbox with clutch, possibly support for full powershift transmissions.
--- start date: 08.01.2019
--- release Beta on Github date: 03.02.2019
+-- all the overrides for default functions are in this script 
 
 
 

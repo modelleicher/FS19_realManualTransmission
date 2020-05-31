@@ -1,5 +1,5 @@
 -- by modelleicher
--- menu spec for fakebox 
+-- all menu-related stuff is in this script
 
 rmtMenu = {};
 
@@ -280,27 +280,29 @@ function rmtMenu:onDraw()
 				end;
 				y = y + addY;
 			end;
-			if hud.showGear and fb.gears ~= nil then
-				if fb.neutral then
+			if hud.showGear then
+				local spec = self.spec_rmtClassicTransmission;
+				if spec.neutral then
 					renderText(x, y, 0.02, "Gear: N");
 				else
-					renderText(x, y, 0.02, "Gear: "..tostring(fb.gears[fb.currentGear].name));	
+					renderText(x, y, 0.02, "Gear: "..tostring(spec.gears[spec.currentGear].name));	
 				end;
 				y =  y + addY;
 			end;
 			if hud.showRange then
+				local spec = self.spec_rmtClassicTransmission;
 				local rangeString = "Range: "
 				local hasRange = false;
-				if fb.rangeSet1 ~= nil then	
-					rangeString = rangeString.." "..tostring(fb.rangeSet1.ranges[fb.currentRange1].name);
+				if spec.rangeSet1 ~= nil then	
+					rangeString = rangeString.." "..tostring(spec.rangeSet1.ranges[spec.currentRange1].name);
 					hasRange = true;
 				end;
-				if fb.rangeSet2 ~= nil then
-					rangeString = rangeString.." "..tostring(fb.rangeSet2.ranges[fb.currentRange2].name);
+				if spec.rangeSet2 ~= nil then
+					rangeString = rangeString.." "..tostring(spec.rangeSet2.ranges[spec.currentRange2].name);
 					hasRange = true;
 				end;
-				if fb.rangeSet3 ~= nil then
-					rangeString = rangeString.." "..tostring(fb.rangeSet3.ranges[fb.currentRange3].name);
+				if spec.rangeSet3 ~= nil then
+					rangeString = rangeString.." "..tostring(spec.rangeSet3.ranges[spec.currentRange3].name);
 					hasRange = true;
 				end;
 				if hasRange then
@@ -309,16 +311,17 @@ function rmtMenu:onDraw()
 				end;
 			end;
 			if hud.showReverser then
-				if fb.reverser ~= nil then
+				if self.spec_rmtReverser ~= nil then
+					local spec = self.spec_rmtReverser; 
 					local revString = "Reverser: "
-					if fb.reverser.isForward then
+					if spec.isForward then
 						revString = revString.."F";
-						if not fb.reverser.wantForward then
+						if not spec.wantForward then
 							revString = revString.." ->R";
 						end;
 					else	
 						revString = revString.."R";
-						if fb.reverser.wantForward then
+						if spec.wantForward then
 							revString = revString.." ->F";
 						end;
 					end;
@@ -332,7 +335,11 @@ function rmtMenu:onDraw()
 				y = y + addY;
 			end;
 			if hud.showRpm then
-				renderText(x, y, 0.02, "RPM: "..tostring(math.floor(self.spec_realManualTransmission.lastRealRpm)));
+				if self.isServer then
+					renderText(x, y, 0.02, "RPM: "..tostring(math.floor(self.spec_realManualTransmission.lastRealRpm)));
+				else
+					renderText(x, y, 0.02, "RPM: "..tostring(math.floor(self.spec_motorized.motor.equalizedMotorRpm)));
+				end;
 				y = y + addY;
 			end;
 			if hud.showLoad then

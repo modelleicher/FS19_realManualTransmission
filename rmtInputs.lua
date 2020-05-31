@@ -1,4 +1,5 @@
 -- by modelleicher
+-- all input-related stuff is in this script
 
 rmtInputs = {};
 
@@ -45,7 +46,7 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 			end;	
 
 			-- direct gear buttons
-			if spec.gears ~= nil then
+			if self.spec_rmtClassicTransmission.gears ~= nil then
 				local actions = {"RMT_SHIFT_UP", "RMT_SHIFT_DOWN", "RMT_NEUTRAL", "RMT_SELECT_GEAR_1", "RMT_SELECT_GEAR_2", "RMT_SELECT_GEAR_3", "RMT_SELECT_GEAR_4", "RMT_SELECT_GEAR_5", "RMT_SELECT_GEAR_6", "RMT_SELECT_GEAR_7", "RMT_SELECT_GEAR_8"}
 				for i = 1, #actions do
 					self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", actions[i], "UIP_SYNCH_GEARS")
@@ -53,7 +54,7 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 			end;			
 
 			-- Reverser Buttons (only add them if we have a reverser)
-			if spec.reverser ~= nil then
+			if self.spec_rmtReverser ~= nil then
 				local actions = {"RMT_FORWARD", "RMT_REVERSE", "RMT_TOGGLE_REVERSER"}
 				for i = 1, #actions do
 					self:addRmtActionEvent("BUTTON_SINGLE_ACTION", actions[i], "UIP_SYNCH_REVERSER")
@@ -66,7 +67,7 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_HANDTHROTTLE_AXIS", "RMT_HANDTHROTTLE");
 
 			-- Range up / range down 
-			if spec.rangeSet1 ~= nil then
+			if self.spec_rmtClassicTransmission.rangeSet1 ~= nil then
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_UP1", "UIP_SYNCH_RANGES");
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_DOWN1", "UIP_SYNCH_RANGES");
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_TOGGLE1", "UIP_SYNCH_RANGES");
@@ -78,11 +79,11 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_5", "UIP_SYNCH_RANGES");
 				self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", "RMT_RANGE_DIRECT_6", "UIP_SYNCH_RANGES");																	
 			end; 
-			if spec.rangeSet2 ~= nil then
+			if self.spec_rmtClassicTransmission.rangeSet2 ~= nil then
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_UP2", "UIP_SYNCH_RANGES");
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_DOWN2", "UIP_SYNCH_RANGES");			
 			end;
-			if spec.rangeSet3 ~= nil then
+			if self.spec_rmtClassicTransmission.rangeSet3 ~= nil then
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_UP3", "UIP_SYNCH_RANGES");
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_DOWN3", "UIP_SYNCH_RANGES");
 				self:addRmtActionEvent("BUTTON_SINGLE_ACTION", "RMT_RANGE_TOGGLE3", "UIP_SYNCH_RANGES");			
@@ -126,14 +127,14 @@ end;
 
 function rmtInputs:UIP_SYNCH_REVERSER(actionName, inputValue)
 	--print("UIP_SYNCH_REVERSER called");
-	if self.spec_realManualTransmission.reverser ~= nil then
-		--print("UIP_SYNCH_REVERSER - reverser not nil");
+	if self.spec_rmtReverser ~= nil then
+		print("UIP_SYNCH_REVERSER - reverser not nil");
 		if actionName == "RMT_FORWARD" then
 			self:selectReverser(true);
 		elseif actionName == "RMT_REVERSE" then
 			self:selectReverser(false);
 		elseif actionName == "RMT_TOGGLE_REVERSER" then
-			self:selectReverser(not self.spec_realManualTransmission.reverser.isForward);
+			self:selectReverser(not self.spec_rmtReverser.isForward);
 		end;
 	end;
 end;
@@ -146,7 +147,8 @@ end;
 
 -- direct gear selection 
 function rmtInputs:UIP_SYNCH_GEARS(actionName, inputValue)
-	local spec = self.spec_realManualTransmission;
+	local spec = self.spec_rmtClassicTransmission;
+	local rmt = self.spec_realManualTransmission;
 	local gearValue = 0; -- always start with 0 to not get nil errors in event 
 	local sequentialDir = 0; 
 	
@@ -154,7 +156,7 @@ function rmtInputs:UIP_SYNCH_GEARS(actionName, inputValue)
 	local stringEndNumber = tonumber(actionName:sub(actionName:len())) -- convert the actionName string to a gear number 
 	if stringEndNumber ~= nil then
 		gearValue = stringEndNumber;
-		if inputValue == 0 and spec.buttonReleaseNeutral then -- if actionName is neutral or we released the gear-button, go neutral 
+		if inputValue == 0 and rmt.buttonReleaseNeutral then -- if actionName is neutral or we released the gear-button, go neutral 
 			gearValue = -1;
 		end;	
 	end;
@@ -174,7 +176,7 @@ function rmtInputs:UIP_SYNCH_GEARS(actionName, inputValue)
 	
 	if gearValue ~= 0 or sequentialDir ~= 0 then -- only continue if something changed 
 	
-		if spec.switchGearRangeMapping then -- take care of range/gear mapping swap here because its client-side 
+		if rmt.switchGearRangeMapping then -- take care of range/gear mapping swap here because its client-side 
 			self:processRangeInputs(sequentialDir, 1, gearValue);
 		else
 			self:processGearInputs(gearValue, sequentialDir);
@@ -185,7 +187,8 @@ end;
 
 function rmtInputs:UIP_SYNCH_RANGES(actionName, inputValue)
 	--print("UIP_SYNCH_RANGES "..tostring(actionName).." - "..tostring(inputValue));
-	local spec = self.spec_realManualTransmission;
+	local spec = self.spec_rmtClassicTransmission;
+	local rmt = self.spec_realManualTransmission;
 	local dir = 0;
 	local index = 1;
 	local force = nil;
@@ -253,7 +256,7 @@ function rmtInputs:UIP_SYNCH_RANGES(actionName, inputValue)
 	
 	if dir ~= 0 or force ~= nil then -- only continue if something changed 
 		--print("UIP_SYNCH_RANGES dir: "..tostring(dir).." index:"..tostring(index));
-		if not spec.switchGearRangeMapping then
+		if not rmt.switchGearRangeMapping then
 			self:processRangeInputs(dir, index, force);
 		else
 			self:processGearInputs(force, dir);
