@@ -749,7 +749,7 @@ function rmtClassicTransmission:getDirectionAndRatio_classicTransmission(forceGe
 		if spec.gears[gear].isReverse then
 			dirVal = dirVal * -1;
 		end;
-		if not dirVal then 
+		if dirVal == -1 then 
 			dir = false;
 		end;
 	end;

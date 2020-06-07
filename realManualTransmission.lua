@@ -4,9 +4,8 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.0.9 ###
-	-- reverser hotfix
-	-- removed confusing debug prints 
+-- V 0.6.1.0 ###
+	-- hotfix fixed reverse gear/reverse range not working
 	
 
 realManualTransmission = {};
