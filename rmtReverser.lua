@@ -42,22 +42,22 @@ function rmtReverser:selectReverser(isForward, noEventSend)
 	selectReverserEvent.sendEvent(self, isForward, noEventSend);
 	local spec = self.spec_rmtReverser;
 	-- first, check which reverser type it is
-	if rev.type == "preselect" then 
-		rev.wantForward = isForward; -- set wanted forward value 
-		rev.allowDirectionChange = true;
-	elseif rev.type == "normal" then
+	if spec.type == "preselect" then 
+		spec.wantForward = isForward; -- set wanted forward value 
+		spec.allowDirectionChange = true;
+	elseif spec.type == "normal" then
 		-- check if we even need to change direction
-		if rev.isForward ~= isForward then
+		if spec.isForward ~= isForward then
 			-- now, see if we are braking, if not, do so
-			if not rev.isBraking then
-				rev.isBraking = true;
+			if not spec.isBraking then
+				spec.isBraking = true;
 			end;
-			rev.wantForward = isForward; -- set wanted forward value 
+			spec.wantForward = isForward; -- set wanted forward value 
 		end;
-	elseif rev.type == "clutchOnly" then
+	elseif spec.type == "clutchOnly" then
 		if self.spec_realManualTransmission.clutchPercent < 0.2 then -- only allow direction change if clutch is pressed 
-			rev.wantForward = isForward; -- set wanted forward value 
-			rev.allowDirectionChange = true;
+			spec.wantForward = isForward; -- set wanted forward value 
+			spec.allowDirectionChange = true;
 		end;
 	end;
 

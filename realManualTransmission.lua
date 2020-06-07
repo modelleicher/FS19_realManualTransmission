@@ -4,9 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.0.8 ###
-	-- fixed rpm hud bug in Multiplayer
-	-- changed everything because 
+-- V 0.6.0.9 ###
+	-- reverser hotfix
+	-- removed confusing debug prints 
 	
 
 realManualTransmission = {};
@@ -315,7 +315,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 		-- 836 @2200rpm is giants "constant" for speed conversion -> the higher the rpm above 2200 lower the value to keep the same speed 
 		spec.ratioRpmConstant = 836 * (spec.ratedRpm / 2200 ) 
 		
-		print("RPM RATIO CONSTANT: "..tostring(spec.ratioRpmConstant));
+		print("RMT Debug: RPM ratio constand -> "..tostring(spec.ratioRpmConstant));
 	
 		-- load classic transmission, gears and ranges 
 		self:loadFromXML_classicTransmission(xmlFile, key, i);
@@ -407,13 +407,13 @@ function realManualTransmission:calculateRatio(returnSpeed, gear, range1, range2
 
 	if returnSpeed then
 		local speed = spec.maxSpeedPossible * classicTransmissionRatioGet * reverserRatioGet * spec.finalRatio;
-		print("return speed: "..tostring(endRatio))
+		--print("return speed: "..tostring(endRatio))
 		return speed;
 	end;
 	
 	local endRatio = classicTransmissionRatioGet / reverserRatioGet / spec.finalRatio;
 		
-	print("return end ratio: "..tostring(endRatio))
+	--print("return end ratio: "..tostring(endRatio))
 
 	return endRatio;
 end;
@@ -667,7 +667,7 @@ function realManualTransmission:onUpdate(dt)
 			-- now calculate wanted gear ratio with gear and rangeRatio and final ratio 
 			spec.wantedGearRatio = self:calculateRatio()
 			
-			print(spec.wantedGearRatio)
+			--print(spec.wantedGearRatio)
 			
 			-- current wanted speed is needed for engine break calculation
 			spec.currentWantedSpeed = spec.ratioRpmConstant / spec.wantedGearRatio;  -- 

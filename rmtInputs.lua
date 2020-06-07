@@ -128,7 +128,7 @@ end;
 function rmtInputs:UIP_SYNCH_REVERSER(actionName, inputValue)
 	--print("UIP_SYNCH_REVERSER called");
 	if self.spec_rmtReverser ~= nil then
-		print("UIP_SYNCH_REVERSER - reverser not nil");
+		--print("UIP_SYNCH_REVERSER - reverser not nil");
 		if actionName == "RMT_FORWARD" then
 			self:selectReverser(true);
 		elseif actionName == "RMT_REVERSE" then

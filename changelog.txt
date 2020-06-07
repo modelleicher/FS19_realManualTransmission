@@ -1,5 +1,8 @@
 -- Changelog:
 
+-- V 0.6.0.9 ###
+	-- reverser hotfix 
+	-- removed confusing debug prints 
 -- V 0.6.0.8 ###
 	-- fixed rpm hud bug in Multiplayer
 	-- changed everything because 
