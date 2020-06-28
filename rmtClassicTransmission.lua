@@ -89,7 +89,9 @@ function rmtClassicTransmission:loadFromXML_classicTransmission(xmlFile, key, i)
         spec.currentRange3 = spec.rangeSet3.defaultRange;
     --	print("loaded rangeSet3");
 	end;
-	
+
+	spec.autoRangeMatching = Utils.getNoNil(getXMLBool(self.xmlFile, key.."realManualTransmission("..i..")#autoRangeMatching"), false);
+
 	spec.currentGear = spec.defaultGear;
 	spec.neutral = true;	
 end;
@@ -366,6 +368,8 @@ function rmtClassicTransmission:selectGear(wantedGear, mappingValue)
 			local lastClosestTo1 = 0;
 			local idealRange = nil;
 			
+			print("Auto Range Matching hit")
+
 			-- go through all the ranges, see which one matches the closest to the current speed 
 			for i = 1, rangeSet.numberOfRanges do 
 			
@@ -373,6 +377,7 @@ function rmtClassicTransmission:selectGear(wantedGear, mappingValue)
 				--local speedMax = spec.gears[spec.currentGear].speed * rangeSet.ranges[i].ratio * rangeRatio * spec.finalRatio; -- V 0.5.1.4 removed this 
 				
 				local speedMax = self:calculateRatio(true, spec.currentGear, i);
+				print("SpeedMax:"..tostring(speedMax))
 				-- now calculate the min speed in that possible range 
 				local speedMin = speedMax * (self.spec_motorized.motor.minRpm / self.spec_motorized.motor.maxRpm);
 				-- we don't want to be at minRpm / idle though, so add 26% speed 

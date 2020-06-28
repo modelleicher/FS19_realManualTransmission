@@ -4,8 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.1.0 ###
-	-- hotfix fixed reverse gear/reverse range not working
+-- V 0.6.1.1 ###
+	-- fixed autoRangeMatching
+	-- added Synchronization for Hand Throttle in Multiplayer
 	
 
 realManualTransmission = {};
@@ -234,6 +235,8 @@ function realManualTransmission:onLoad(savegame)
 		
 		spec.synchClutchInputDirtyFlag = self:getNextDirtyFlag()
 		--spec.synchRpmDirtyFlag = self:getNextDirtyFlag()
+
+		spec.synchHandThrottleDirtyFlag = self:getNextDirtyFlag()
 		
 		
 		-- lower low brake force speed limit to prevent automatic braking 
@@ -330,7 +333,7 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 		
 		spec.finalRatio = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#finalRatio"), 1);
 		spec.switchGearRangeMapping = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#switchGearRangeMapping"), false);
-		spec.autoRangeMatching = Utils.getNoNil(getXMLBool(self.xmlFile, key.."realManualTransmission("..i..")#autoRangeMatching"), false);
+
 
 		spec.engineStallRpm = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#engineStallRpm"), 500)
 		spec.engineStallTimer = Utils.getNoNil(getXMLFloat(self.xmlFile, key.."realManualTransmission("..i..")#engineStallTimer"), 500)
@@ -675,8 +678,10 @@ function realManualTransmission:onUpdate(dt)
 			-- calculating hand throttle 
 			if spec.handThrottleDown then
 				spec.handThrottlePercent = math.max(0, spec.handThrottlePercent - 0.001*dt);
+				self:raiseDirtyFlags(spec.synchHandThrottleDirtyFlag)
 			elseif spec.handThrottleUp then
 				spec.handThrottlePercent = math.min(1, spec.handThrottlePercent + 0.001*dt);
+				self:raiseDirtyFlags(spec.synchHandThrottleDirtyFlag)				
 			end;
 				
 			-- calculating the automatic clutch 
@@ -861,8 +866,10 @@ function realManualTransmission:onWriteUpdateStream(streamId, connection, dirtyM
 	if connection:getIsServer() and self.hasRMT then -- client side
 		if streamWriteBool(streamId, bitAND(dirtyMask, spec.synchClutchInputDirtyFlag) ~= 0) then
 			streamWriteUIntN(streamId, spec.clutchPercentManual * 100, 7);
-			--print(tostring(spec.clutchPercentManual));
 		end;
+		if streamWriteBool(streamId, bitAND(dirtyMask, spec.synchHandThrottleDirtyFlag) ~= 0) then
+			streamWriteUIntN(streamId, spec.handThrottlePercent * 100, 7);
+		end;		
 	end;
 	
 	--[[if not connection:getIsServer() and self.hasRMT then -- server-side 
@@ -882,8 +889,10 @@ function realManualTransmission:onReadUpdateStream(streamId, timestamp, connecti
 	if not connection:getIsServer() and self.hasRMT then -- server-side ( V 0.5.1.5 fix, hopefully)
 		if streamReadBool(streamId) then
 			spec.clutchPercentManual = streamReadUIntN(streamId, 7) / 100;
-			--print(tostring(spec.clutchPercentManual));
 		end;
+		if streamReadBool(streamId) then
+			spec.handThrottlePercent = streamReadUIntN(streamId, 7) / 100;
+		end;		
 	end;
 	
 	--[[if connection:getIsServer() then

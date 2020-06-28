@@ -1,5 +1,8 @@
 -- Changelog:
 
+-- V 0.6.1.1 ###
+	-- fixed autoRangeMatching
+	-- added Synchronization for Hand Throttle in Multiplayer
 -- V 0.6.1.0 ###
 	-- hotfix fixed reverse gear/reverse range not working	
 -- V 0.6.0.9 ###
