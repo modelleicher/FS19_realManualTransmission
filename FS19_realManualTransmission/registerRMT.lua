@@ -12,6 +12,7 @@ g_specializationManager:addSpecialization("rmtInputs", "rmtInputs", g_currentMod
 
 g_specializationManager:addSpecialization("rmtClassicTransmission", "rmtClassicTransmission", g_currentModDirectory.."rmtClassicTransmission.lua")
 g_specializationManager:addSpecialization("rmtReverser", "rmtReverser", g_currentModDirectory.."rmtReverser.lua")
+g_specializationManager:addSpecialization("rmtAutomatic", "rmtAutomatic", g_currentModDirectory.."rmtAutomatic.lua")
 
 registerRMT = {}
 
@@ -38,7 +39,8 @@ function registerRMT:register(name)
 			g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.rmtMenu")
             g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.rmtInputs")
             g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.rmtClassicTransmission")        
-            g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.rmtReverser")                    
+            g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.rmtReverser")        
+            g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.rmtAutomatic")                    
             g_vehicleTypeManager:addSpecialization(vehicle.name, "FS19_realManualTransmission.realManualTransmission")   
         end
     end

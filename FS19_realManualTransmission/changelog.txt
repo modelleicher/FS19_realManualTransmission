@@ -1,0 +1,170 @@
+-- Changelog:
+
+-- V 0.6.1.3 ###
+	-- added objectChange support for RMT Configurations
+	-- removed Debug Print for Ratio Constant because no longer needed and people confused "DEBUG PRINT" for error in log
+	-- changed sequential gear and range selection calculation to allow for multiple gears/ranges shifted/skipped when using automaticClutch
+	-- added axis for gear shifting for people wanting to use analog axis to simulate FPS Transmissions (not tested, try on your own)
+-- V 0.6.1.2 ###
+	-- seperated different transmission-types and parts into their own scripts to aid clarity and improve easy for future implementation of additional functions 
+	-- started working on rmtAutomatic for automatic transmissions, stopped development due to time constraints and shift in priorities
+-- V 0.6.1.1 ###
+	-- fixed autoRangeMatching
+	-- added Synchronization for Hand Throttle in Multiplayer
+-- V 0.6.1.0 ###
+	-- hotfix fixed reverse gear/reverse range not working	
+-- V 0.6.0.9 ###
+	-- reverser hotfix 
+	-- removed confusing debug prints 
+-- V 0.6.0.8 ###
+	-- fixed rpm hud bug in Multiplayer
+	-- changed everything because 
+-- V 0.6.0.7 ###
+	-- fixed 'FS19_realManualTransmission/events/processRangeInputsEvent.lua (28) : streamWriteInt8 argument nil error in Multiplayer  
+	-- addition of optional ratedRpm entry in the rmt config (ratedRpm -> rpm at which max speed is achieved) and fix for not reaching/overreaching speeds if the vehicle has maxRpm other than 2200
+-- V 0.6.0.6 ###
+	-- fixed MP issue of stalling
+-- V 0.6.0.5 ###
+	-- possible fix for Joystick/analog axis not working for shift up/down in gear or range 
+-- V 0.6.0.4 ###
+	-- fixed clutch button not working correctly since last update 
+	-- fixed issue of not restarting first try after stalling 
+-- V 0.6.0.3 ###
+	-- fixed disableGearTable Error
+	-- added engineStallRpm attribute option to set stallRpm per vehicle and not use default 500rpm (for example for really slow turning Lanz Bullogs)
+	-- added engineStallTimer attribute optionn to set the timer how many miliseconds the engine rpm needs to be below stall rpm in order to stall
+	-- added range toggle buttons to toggle between min and max range of each rangeSet with 1 button instead of up/down button
+	-- added direct selection buttons for rangeSet1 to select range 1 to 6 via direct buttons
+-- V 0.6.0.2 ###
+	-- temporary "fixed" issue with Real Dirt Color as it destroys loadMap function so I moved stuff somewhere else.
+	-- I would not recommend to use Real Dirt Color until it is updated since it will have issues with other mods aswell. But RMT should be fine now.
+-- V 0.6.0.1 ###
+	-- changed fuction override from storing orig. function in local variable to using Utils.overwrittenFunction to avoid mod conflicts 
+	-- fixed gear disable in range not working bug 
+-- V 0.6.0.0 ###
+	-- added possibility to add RMT to DLC vehicles via basegameConfigs.xml 
+	-- added Claas Arion 400 Quadrashift transmission to  basegameConfigs.xml 
+-- V 0.5.1.9 ###
+	-- Multiplayer load sound calculation final fix and some other small fixes 
+-- V 0.5.1.8 ###
+	-- can't remember what I fixed and forgot to add here.. 
+-- V 0.5.1.7 ###
+	-- small change to load return for sound, load-sound starts to play even at low RPM now 
+	-- fixed bug with rangeSet3 lockout code 
+	-- improved motorLoad calculation clientSide in multiplayer 
+-- V 0.5.1.6 ###
+	-- added ability for autoDownshiftSpeed to ranges. For example for Fendt's 40kph variant of the Fendt 500, it automatically downshifts from IV to III at 43.5kph
+	-- added support for specific rangeMatching calculation per gear 
+-- V 0.5.1.5 ###
+	-- autoRangeMatching speedMatching percentage up/down values optional per gear in XML now 
+	-- possible fix for error on Servers if vehicle does NOT have RMT 
+	-- outsourced Inputs to rmtInputs spec 
+	-- added fluid clutch support (for Fendt Turbomatik and similar systems)
+	-- added default Config for 500 Fendt to basegameConfigs 
+	-- reworked clutch calculation, clutch feeling is different now (tell me if its better) no more stalling tractors trying to slowly slip the clutch on a hill since RPM is pulled down less 	
+-- V 0.5.1.4 ###
+	-- outsourced functions to rmtUils script 
+	-- added new calculateRatio function for future-proofing
+	-- changes to the range matching calculation, it should fit better when upshifting now 
+-- V 0.5.1.3 ###
+	-- fixed reverser naming inconsistency in hud 
+-- V 0.5.1.2 ###
+	-- fixed Reverser not working when RMT is off 
+	-- added automatic range matching 
+-- V 0.5.1.1 ###
+	-- fixed MP bug where RMT of your vehicle was controlled by other people too
+	-- possibly fixed joining synch bug which locks up RMT in some cases 
+-- V 0.5.1.0 ###
+	-- fixed Range Lockout Bug which made it impossible to shift ranges in some vehicles (also caused an error) 
+	-- fixed clutch not working Bug 
+-- V 0.5.0.9 ###
+	-- MP Beta 2, added rest of the events, fixed things, everything should work in MP now..
+-- V 0.5.0.4 ### 
+	-- MP Beta, changed lots of stuff around to make MP compatabilty work, added events
+-- V 0.4.2.0 ###
+	-- added rangeAdjust where you can set up to automatically adjust the range when changing from one gear to another 
+	-- changed loadPercentage smoothing, now load increase if actual load is above 0.99 e.g. 1 is smoothed half as much as otherwise to increase reaction time when rev matching 
+-- V 0.4.1.0 ###
+	-- fixed gear up/down keys being the wrong way around 
+-- V 0.4.0.9 ###
+	-- fixed Neutral not working with H-Shifter bug that was introduced with the last version 
+	-- more basegameConfigs thanks to Johny6210!! Much more basegame vehicles have RMT set up for them already now :)
+-- V 0.4.0.8 ###
+	-- change and compaction of inputAction adding 
+	-- all the overriding moved to rmtOverride now 
+	-- reverser mode "clutchOnly" added where you can only reverse driving direction through the reverser if clutch is pressed 
+-- V 0.4.0.7 ###
+	-- added default naming for gears if name="" attribute is missing in config 
+	-- having gears is no longer needed (in order for other transmission types to work later on)
+-- V 0.4.0.6 ###
+	-- fixed Log Error when shifting into non-existing gear with H-Shifter 
+	-- added realManualTransmissionConfigurations so you can have multiple transmission configs in one vehicle 
+	-- fixed bug that menu settings did not save 
+	-- fixed bug in disableRange feature where you could still shift into disabled range 
+-- V 0.4.0.4 ###
+	-- fixed hud bug where rangeSet2 and rangeSet3 didn't display 
+	-- added new disableRange / disableGear system to disable / lock out certain ranges or gears in certain ranges (to do, add warning messages)
+-- V 0.4.0.3 ###
+	-- fixed enginebrake when handthrottle is used 
+	-- fixed "no brake" bug when engine is stalled 
+-- V 0.4.0.2 ###
+	-- added Input Mapping to turn RMT on/off per vehicle 
+	-- turns itself off automatically when AI is hired 
+-- V 0.4.0.1 ###
+	-- removed debugPrints I forgot to remove 
+	-- added Utils.getNoNil for reverser Settings values 
+-- V 0.4.0.0 ###
+	-- change in version numbers, we're on Github now!
+	-- more smoothing of motorLoad 
+	-- changed how we check if engineBrake is in effect 
+	-- a few pieces of remaining unneeded code deleted 
+	-- let the bugreports roll in.. :( 
+-- V 0.0.3.9 ###
+	-- added smoothing via table and average values for motorload percentage since smoothing like Giants does it doesn't work if one value is 0
+-- V 0.0.3.8 ###
+	-- fixed all the stuff I broke when testing the last 2 versions.. 
+	-- different variable to calculate engine brake 
+-- V 0.0.3.7 ###
+	-- added clutch influence on max clutch torque and max acceleration altough this doesn't seem to do much. Seems to make the vel acc spike a little less when clutching slowly 
+-- V 0.0.3.6 ###
+	-- many versions.. one changelog. Nothing changed. Its all still stupid.. (trying to figure out the RPM and vel acceleration spike bug)
+-- V 0.0.3.5 ###
+	-- renamed everything realManualTransmission / RMT fully now
+	-- XML configs are now realManualTransmission instead of fakeBox
+-- V 0.0.3.4 ###
+	-- chasing bugs.. 
+-- V 0.0.3.3 ###
+	-- redone the way final acceleration is calculated, now 50% pedal means 50% rpm and exactly that
+	-- fixed the way hand throttle is working (see above)
+-- V 0.0.3.2 ### 
+	-- fixed rpm spike when clutching in (or at least made it less)
+	-- fixed basegameConfigs loading 
+	-- redone engine brake, should be way better now 
+-- V 0.0.3.1 ###
+	-- fixed disableInRangeSetX 
+-- V 0.0.3.0 ###
+	-- gearRatio is set to 1 when in neutral or clutch fully pressed so it doesn't fake-brake when changing gears 
+-- V 0.0.2.9
+	-- added hand throttle 
+-- V 0.0.2.8 ###
+	-- settings and hud position is now saved and loaded in the savegame 
+-- V 0.0.2.7 ### 
+	-- hud moveable with mouse
+	-- basegameConfigs.xml added to add configs for baseGame vehicles.. Its stupid though because sounds are stupid 
+	-- no-brake below 1kph bug fixed 
+	-- engine-brakeforce calculation updated, still finetuning to do about the base value 
+	-- disableInRanges bug fixed where you can stay in a disabled gear when shifting into that range with the gear engaged. Now you get gear -> neutral if you shift into a range this gear is disabled in 
+-- V 0.0.2.6 reworked clutch, changed stuff.. I hate this changelog
+-- V 0.0.2.0 added GUI/HUD for settings, added Reverser 
+-- V 0.0.1.9 fixing ranges, fixing minor things 
+-- V 0.0.1.8 adding of automatic clutch for ranges, fixing powershift ranges 
+-- V 0.0.1.7 adding of automatic clutch opening at low rpm 
+-- V 0.0.1.6 adding of automatic clutch for gearchanges 
+-- V 0.0.1.5 bugfixes
+-- V 0.0.1.4 major rewrite and future-proofing of gear and range selection
+--           and possible gear and range config values 
+-- V 0.0.1.3 added removal of all braking if we don't want to brake (still auto-brakes in reverse :( )
+-- V 0.0.1.2 minor bugfixes 
+-- V 0.0.1.1 added reverse drive
+-- V 0.0.1.0 first internal release to testing
+-- V 0.0.0.9 initial implementation 

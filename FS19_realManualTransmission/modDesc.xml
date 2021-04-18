@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="47">
+<modDesc descVersion="53">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.6.1.1</version>
+    <version>0.6.1.3</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -29,6 +29,8 @@
 		<text name="input_RMT_HANDTHROTTLE_UP"><de>RMT: Handgas erhöhen</de><en>RMT: hand throttle up</en></text>
 		<text name="input_RMT_HANDTHROTTLE_DOWN"><de>RMT: Handgas verringern</de><en>RMT: hand throttle down</en></text>
 		<text name="input_RMT_HANDTHROTTLE_AXIS"><de>RMT: Handgas Analoge Achse</de><en>RMT: hand throttle axis</en></text>
+
+		<text name="input_RMT_GEARSHIFT_AXIS"><de>RMT: Gangschalten (z.B FPS) Analoge Achse</de><en>RMT: gear-shift analog axis (for example FPS)</en></text>		
 		
 		<text name="input_RMT_SHIFT_UP"><de>RMT: Gang hochschalten</de><en>RMT: gear shift up</en></text>
 		<text name="input_RMT_SHIFT_DOWN"><de>RMT: Gang runterschalten</de><en>RMT: gear shift down</en></text>
@@ -113,6 +115,10 @@
 		<actionBinding action="RMT_HANDTHROTTLE_AXIS">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
 		</actionBinding>
+
+		<actionBinding action="RMT_GEARSHIFT_AXIS">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>		
 		
 		<actionBinding action="RMT_SHIFT_UP">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
@@ -234,6 +240,8 @@
 		<action name="RMT_FORWARD" />
 		<action name="RMT_REVERSE" />
 		<action name="RMT_TOGGLE_REVERSER" />
+
+		<action name="RMT_GEARSHIFT_AXIS" />		
 		
 		<action name="RMT_HANDTHROTTLE_AXIS" />
 		<action name="RMT_HANDTHROTTLE_DOWN" />

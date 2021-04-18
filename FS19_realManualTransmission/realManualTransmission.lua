@@ -4,10 +4,11 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.1.1 ###
-	-- fixed autoRangeMatching
-	-- added Synchronization for Hand Throttle in Multiplayer
-	
+-- V 0.6.1.3 ###
+	-- added objectChange support for RMT Configurations
+	-- removed Debug Print for Ratio Constant because no longer needed and people confused "DEBUG PRINT" for error in log
+	-- changed sequential gear and range selection calculation to allow for multiple gears/ranges shifted/skipped when using automaticClutch
+	-- added axis for gear shifting for people wanting to use analog axis to simulate FPS Transmissions (not tested, try on your own)
 
 realManualTransmission = {};
 
@@ -40,6 +41,7 @@ function realManualTransmission:onLoad(savegame)
 	self.processToggleOnOff = realManualTransmission.processToggleOnOff;
 	
 	self.calculateRatio = realManualTransmission.calculateRatio;
+	self.getClutchPercent = realManualTransmission.getClutchPercent;
 	
 	--
 	self.hasRMT = false;
@@ -91,7 +93,7 @@ function realManualTransmission:onLoad(savegame)
 	end;
 	
 	if self.hasRMT then
-		
+
 		-- calculate max speeds
 		local maxSpeedPossible_classicTransmission = self:getMaxSpeedPossible_classicTransmission()
 
@@ -122,7 +124,7 @@ function realManualTransmission:onLoad(savegame)
 		spec.maxLowBrakeForceScale = 0.60;
 		spec.wantedLowBrakeForceScale = 0;
 		
-		spec.engineBrakeBase = 0.35;
+		spec.engineBrakeBase = 0.22;
 		spec.engineBrakeModifier = 1;
 		spec.wantedEngineBrake = 0;
 		
@@ -133,6 +135,8 @@ function realManualTransmission:onLoad(savegame)
 		spec.clutchPercentManual = 1; -- this is the clutch percent value calculated from the clutch pedal 
 		spec.clutchPercentAuto = 1; -- this is the clutch percent value calculated from the automatic clutch in auto mode or reverser 
 		spec.clutchPercentFluid = 1;
+		spec.clutchPercentAutomatic = 1;
+
 		-- clutchPercent equals to the smaller one (e.g. more open one) of these to. but that way both can be calculated individually without interference and we always have the most open value 
 		-- 
 		spec.lastClutchPercent2frames = spec.clutchPercent;
@@ -309,6 +313,11 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 				-- change key to config key 
 				key = key.."realManualTransmissionConfigurations.realManualTransmissionConfiguration("..(self.configurations.realManualTransmission-1)..").";
 			end;
+
+			-- update objectChanges V 0.6.1.3
+			local rmtConfigurationId = Utils.getNoNil(self.configurations["realManualTransmission"], 1)
+			ObjectChangeUtil.updateObjectChanges(self.xmlFile, "vehicle.realManualTransmissionConfigurations.realManualTransmissionConfiguration", rmtConfigurationId , self.components, self)
+						
 		end;
 		
 		-- rated rpm at which max speed is reached, can be different to max rpm (if it doesn't exist it equals max rpm) 
@@ -317,12 +326,12 @@ function realManualTransmission:loadFromXML(xmlFile, key, i)
 		-- 836 @2200rpm is giants "constant" for speed conversion -> the higher the rpm above 2200 lower the value to keep the same speed 
 		spec.ratioRpmConstant = 836 * (spec.ratedRpm / 2200 ) 
 		
-		print("RMT Debug: RPM ratio constand -> "..tostring(spec.ratioRpmConstant));
-	
 		-- load classic transmission, gears and ranges 
 		self:loadFromXML_classicTransmission(xmlFile, key, i);
 
 		self:loadFromXML_reverser(xmlFile, key, i);
+
+		self:loadFromXML_automatic(xmlFile, key, i);
 		
 		-- fluid clutch (like Fendt Turbomatik)
 		local stallRpm = getXMLInt(xmlFile, key.."realManualTransmission("..i..").fluidClutch#stallRpm")
@@ -419,6 +428,12 @@ function realManualTransmission:calculateRatio(returnSpeed, gear, range1, range2
 
 	return endRatio;
 end;
+
+function realManualTransmission:getClutchPercent()
+	local spec = self.spec_realManualTransmission;
+	return math.min(spec.clutchPercentAuto, spec.clutchPercentManual, spec.clutchPercentFluid, spec.clutchPercentAutomatic);
+end;
+
 function realManualTransmission:onUpdate(dt) 
 
 	-- debugs...
@@ -448,7 +463,8 @@ function realManualTransmission:onUpdate(dt)
 			-- first, really FIRST, see if analog or digital clutch is more open, use the more open one!
 			-- that is to remove glitches when using automatic clutch in reverser together with clutch pedal 
 			-- which ever is smaller, use that one
-			spec.clutchPercent = math.min(spec.clutchPercentAuto, spec.clutchPercentManual, spec.clutchPercentFluid);
+			spec.clutchPercent = self:getClutchPercent(); 
+
 			
 			if self.spec_motorized.isMotorStarted then
 				if not self.isServer then
@@ -484,7 +500,12 @@ function realManualTransmission:onUpdate(dt)
 				local rpm = motor.lastRealMotorRpm;
 				--local mLoad = self.spec_motorized.actualLoadPercentage;		
 				local mAxisForward = self:getAxisForward()
-				
+
+				-- insert automatic acc override
+				if self.spec_rmtAutomatic ~= nil and self.spec_rmtAutomatic.accelerationOverride ~= nil then
+					mAxisForward = self.spec_rmtAutomatic.accelerationOverride;
+				end;
+
 				spec.lastAxisForward = mAxisForward;
 
 				-- motor load for sound 
@@ -512,7 +533,7 @@ function realManualTransmission:onUpdate(dt)
 				
 				end;
 			
-				if spec.clutchPercent < 0.6 or spec.neutral then
+				if spec.clutchPercent < 0.6 or spec.neutral or (self.spec_rmtAutomatic ~= nil and self.spec_rmtAutomatic.accelerationOverride ~= nil ) then
 					-- if clutch is pressed or neutral, load percentage is calculated using wanted and actual RPM 
 					if (rpm / motor.maxRpm) < mAxisForward then
 						loadPercentage = 1;

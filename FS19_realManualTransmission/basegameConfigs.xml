@@ -63,12 +63,37 @@
 			<ratios forward="1" reverse="1" />
 			<settings brakeAggressionBias="1" clutchTime="500" /> <!-- settings are optional, it uses default values. But you can influence the amount/aggression when braking with brakeAggressionBias and the time the clutch takes to close again with clutchTime -->
 		</reverser>	
+
+        <automatic>
+            <gears shiftAutomatic="true" hasKickdown="true" preferedShift="false" />
+            <rangeSet1 shiftAutomatic="true" hasKickdown="true" preferedShift="true" />
+
+        </automatic>
 		
 	</realManualTransmission>	
 	
 	<!-- end sample -->
 	
 	<!-- start actual -->
+	
+	<!-- Alpin DLC Bührer 6105 config by IrrSinn-Rainer -->
+	<realManualTransmission configFile="series6105.xml" finalRatio="1" >
+		<gears defaultGear="2" powerShift="false" >
+			<gear speed="12.1" name="R" isReverse="true"/>
+			<gear speed="7.5" name="1" />
+			<gear speed="10.8" name="2" />
+			<gear speed="17.1" name="3" />
+			<gear speed="24.1" name="4" />
+			<gear speed="34.2" name="5" /> 
+		</gears>
+		
+		<rangeSet1 powerShift="false" defaultRange="3" hasNeutralPosition="false" >
+			<range ratio="0.209" name="Kriech" />
+			<range ratio="0.523" name="Acker" />
+			<range ratio="1" name="Straße" />
+		</rangeSet1>	
+	</realManualTransmission>	
+		
 	
  <realManualTransmission configFile="favorit500.xml">
 			 

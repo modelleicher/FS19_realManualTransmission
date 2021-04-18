@@ -59,7 +59,10 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 				for i = 1, #actions do
 					self:addRmtActionEvent("BUTTON_SINGLE_ACTION", actions[i], "UIP_SYNCH_REVERSER")
 				end;
-			end;		
+			end;	
+			
+			-- gear shift via axis 
+			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_GEARSHIFT_AXIS", "RMT_GEARSHIFT_AXIS");
 
 			-- hand throttle 
 			self:addRmtActionEvent("PRESSED_OR_AXIS", "RMT_HANDTHROTTLE_UP", "RMT_HANDTHROTTLE");
@@ -261,6 +264,19 @@ function rmtInputs:UIP_SYNCH_RANGES(actionName, inputValue)
 		else
 			self:processGearInputs(force, dir);
 		end;
+	end;
+end;
+
+-- shifting axis for fps transmissions
+function rmtInputs:RMT_GEARSHIFT_AXIS(actionName, inputValue)	
+
+	local spec = self.spec_rmtClassicTransmission;
+	local rmt = self.spec_realManualTransmission;
+
+	local wantedGear = math.floor(spec.numberOfGears * inputValue);
+
+	if wantedGear ~= spec.currentGear then
+		self:processGearInputs(wantedGear, 0);
 	end;
 end;
 

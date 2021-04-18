@@ -82,6 +82,10 @@ function rmtOverride.newMotorUpdate(self, superFunc, dt)
 				
 				-- take hand throttle into account 
 				accInput = math.max(accInput, vehicle.spec_realManualTransmission.handThrottlePercent);
+
+				if vehicle.spec_rmtAutomatic ~= nil and vehicle.spec_rmtAutomatic.accelerationOverride ~= nil then
+					accInput = vehicle.spec_rmtAutomatic.accelerationOverride;
+				end;
 				
 				local wantedRpm = (self.maxRpm - self.minRpm) * accInput + self.minRpm;
 				local currentRpm = self.lastRealMotorRpm;
@@ -234,8 +238,12 @@ function rmtOverride.newUpdateWheelsPhysics(self, superFunc, dt, currentSpeed, a
 		if acceleration >= 0 then -- we are not braking 
 		
 			-- if hand throttle is more than acceleration, use hand throttle value 
-			acceleration = math.max(acceleration, self.spec_realManualTransmission.handThrottlePercent);	
+			acceleration = math.max(acceleration, self.spec_realManualTransmission.handThrottlePercent);
 			
+			if self.spec_rmtAutomatic ~= nil and self.spec_rmtAutomatic.accelerationOverride ~= nil then
+				acceleration = self.spec_rmtAutomatic.accelerationOverride;
+			end;
+						
 			-- calculate the currently wanted RPM depending on acceleration (e.g. pedal position)
 			local wantedRpm = (motor.maxRpm - motor.minRpm) * acceleration + motor.minRpm;
 			
@@ -258,6 +266,11 @@ function rmtOverride.newUpdateWheelsPhysics(self, superFunc, dt, currentSpeed, a
 		-- if engine rpm falls below minRpm acceleration is 1
 		if acceleration >= 0 and self.spec_motorized.motor.lastRealMotorRpm <= (self.spec_motorized.motor.minRpm +2) then
 			acceleration = 1;
+		end;
+
+		-- automatic acc override from automatic transmission
+		if self.spec_rmtAutomatic ~= nil and self.spec_rmtAutomatic.accelerationOverride ~= nil then
+			--acceleration = self.spec_rmtAutomatic.accelerationOverride;
 		end;
 					
 	

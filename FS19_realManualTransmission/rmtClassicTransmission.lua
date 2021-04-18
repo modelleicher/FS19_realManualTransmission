@@ -153,15 +153,24 @@ function rmtClassicTransmission:processGearInputs(gearValue, sequentialDir, noEv
 		end;
 		
 		if sequentialDir == 1 or sequentialDir == -1 then -- we called this via up/down keys e.g. sequential
+
+			-- added calculatingGear step to enable shifting multiple gears at once with automatic clutch V 0.6.1.3
+			local calculatingGear = spec.currentGear;
+
+			if rmt.useAutomaticClutch and rmt.automaticClutch ~= nil and rmt.automaticClutch.wantedGear ~= nil then 
+				calculatingGear = rmt.automaticClutch.wantedGear;
+			end;
+
 			-- just select the gear we want to.. see if we get lockOut back 
-			local lockOut = self:selectGear(spec.currentGear + (1*sequentialDir));
+			local lockOut = self:selectGear(calculatingGear + (1*sequentialDir));
 			-- if we get locked out of the gear we want to shift in, try to shift down/up to the next gear and the next
 			-- to see if we can shift into the next allowed gear, stop if 1 or max is reached 
+
 			if lockOut then
 				if sequentialDir == 1 then -- upshifting 
-					local i = spec.currentGear + 1; 
+					local i = calculatingGear + 1; 
 					while true do -- try for each gear upwards from currentGear 
-						local checkGear = math.min(spec.currentGear + i, spec.numberOfGears);
+						local checkGear = math.min(calculatingGear + i, spec.numberOfGears);
 						lockOut = self:selectGear(checkGear); 
 						if lockOut and checkGear == spec.numberOfGears or lockOut == false then -- stop if max gear is reached and still lockout, or lockout returned false 
 							break;
@@ -169,9 +178,9 @@ function rmtClassicTransmission:processGearInputs(gearValue, sequentialDir, noEv
 						i = i + 1;
 					end;
 				elseif sequentialDir == -1 then -- downshifting
-					local i = spec.currentGear - 1;
+					local i = calculatingGear - 1;
 					while true do -- try for each gear downwards from currentGear 
-						local checkGear = math.max(spec.currentGear - i, 1);
+						local checkGear = math.max(calculatingGear - i, 1);
 						lockOut = self:selectGear(checkGear);
 						if lockOut and checkGear == 1 or lockOut == false then
 							break;
@@ -200,24 +209,31 @@ function rmtClassicTransmission:processRangeInputs(up, index, force, noEventSend
 		if index == 1 then other1 = 2; other2 = 3 end;
 		if index == 2 then other1 = 1; other2 = 3 end;
 		if index == 3 then other1 = 1; other2 = 2 end;
-		
-		local wantedRange = spec["currentRange"..tostring(index)] + up;
-		
+
+		-- added calculatingRange to allow multiple range shifts at once while autoClutch is enabled V 0.6.1.3
+		local calculatingRange = spec["currentRange"..tostring(index)]
+
+		if rmt.useAutomaticClutch and rmt.automaticClutch ~= nil and rmt.automaticClutch.wantedRange ~= nil then 
+			calculatingRange = rmt.automaticClutch.wantedRange;
+		end;
+
+		calculatingRange = calculatingRange + up;
+
 		if force ~= 0 and force ~= nil then
-			wantedRange = force;
+			calculatingRange = force;
 		end;
 		
 		-- make sure our wantedRange is between min and max range we have 
-		wantedRange = math.max(1, math.min(wantedRange, rangeSet.numberOfRanges));
+		calculatingRange = math.max(1, math.min(calculatingRange, rangeSet.numberOfRanges));
 		
-		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(wantedRange, index, other1, other2);
+		local lockOutTrue, wantedNeutral = self:checkRangeLockOut(calculatingRange, index, other1, other2);
 		
 		if lockOutTrue then
-			wantedRange = nil;
+			calculatingRange = nil;
 		end;	
 		
-		if wantedRange ~= nil then
-			self:selectRange(wantedRange, index, wantedNeutral);
+		if calculatingRange ~= nil then
+			self:selectRange(calculatingRange, index, wantedNeutral);
 		end;
 	end;
 end;
@@ -345,6 +361,7 @@ function rmtClassicTransmission:selectGear(wantedGear, mappingValue)
 				for _, rangeAdjust in pairs(spec.gears[wantedGear].rangeAdjusts) do
 					if rangeAdjust.from == spec.lastGear then
 						self:selectRange(rangeAdjust.range, 1, 1)
+						print("range Adjusts")
 					end;
 				end;
 			end;
