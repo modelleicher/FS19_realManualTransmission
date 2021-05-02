@@ -1,5 +1,8 @@
 -- Changelog:
 
+-- V 0.6.1.4 ###
+	-- fixed gear shifting axis so it doesn't override everything else unless the axis is moved 
+	-- removed old menu, started on new menu 
 -- V 0.6.1.3 ###
 	-- added objectChange support for RMT Configurations
 	-- removed Debug Print for Ratio Constant because no longer needed and people confused "DEBUG PRINT" for error in log

@@ -4,11 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.1.3 ###
-	-- added objectChange support for RMT Configurations
-	-- removed Debug Print for Ratio Constant because no longer needed and people confused "DEBUG PRINT" for error in log
-	-- changed sequential gear and range selection calculation to allow for multiple gears/ranges shifted/skipped when using automaticClutch
-	-- added axis for gear shifting for people wanting to use analog axis to simulate FPS Transmissions (not tested, try on your own)
+-- V 0.6.1.4 ###
+	-- fixed gear shifting axis so it doesn't override everything else unless the axis is moved 
+	-- removed old menu, started on new menu 
 
 realManualTransmission = {};
 
@@ -157,15 +155,15 @@ function realManualTransmission:onLoad(savegame)
 		-- settings stuff 
 		spec.buttonReleaseNeutral = true;
 		
-		self:addCheckBox("buttonReleaseNeutral", "gear button release neutral", 0.05, 0.05, 0.24, 0.58, "buttonReleaseNeutral"); 
+		--self:addCheckBox("buttonReleaseNeutral", "gear button release neutral", 0.05, 0.05, 0.24, 0.58, "buttonReleaseNeutral"); 
 	
 		spec.switchGearRangeMapping = Utils.getNoNil(spec.switchGearRangeMapping, false);
-		self:addCheckBox("switchGearRangeMapping", "switch gear range1 mappings", 0.05, 0.05, 0.24, 0.53, "switchGearRangeMapping"); 
+		--self:addCheckBox("switchGearRangeMapping", "switch gear range1 mappings", 0.05, 0.05, 0.24, 0.53, "switchGearRangeMapping"); 
 		
 		-- 
 		spec.useAutomaticClutch = false;
 		
-		self:addCheckBox("useAutoClutch", "use automatic clutch", 0.05, 0.05, 0.24, 0.68, "useAutomaticClutch", nil, "clutchPercentAuto", 1, 1); 
+		--self:addCheckBox("useAutoClutch", "use automatic clutch", 0.05, 0.05, 0.24, 0.68, "useAutomaticClutch", nil, "clutchPercentAuto", 1, 1); 
 		spec.automaticClutch = {};
 		spec.automaticClutch.openTime = 600; --ms
 		spec.automaticClutch.closeTimeMax = 3000;
@@ -178,7 +176,7 @@ function realManualTransmission:onLoad(savegame)
 		
 		spec.automaticClutch.enableOpeningAtLowRPM = false;
 		
-		self:addCheckBox("enableOpeningAtLowRPM", "enable auto-clutch open at low RPM", 0.05, 0.05, 0.24, 0.63, "enableOpeningAtLowRPM", spec.automaticClutch, "clutchPercentAuto", 1, 1); 
+		--self:addCheckBox("enableOpeningAtLowRPM", "enable auto-clutch open at low RPM", 0.05, 0.05, 0.24, 0.63, "enableOpeningAtLowRPM", spec.automaticClutch, "clutchPercentAuto", 1, 1); 
 		
 		spec.automaticClutch.openingAtLowRPMTriggered = false;
 		spec.automaticClutch.openingAtLowRPMLimit = 950;
@@ -222,15 +220,15 @@ function realManualTransmission:onLoad(savegame)
 		
 		self.spec_rmtMenu.hud = hud;
 			
-		self:addCheckBox("showHud", "show hud", 0.04, 0.04, 0.56, 0.72, "showHud", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showGear", "show gear", 0.04, 0.04, 0.56, 0.68, "showGear", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showRange", "show range", 0.04, 0.04, 0.56, 0.64, "showRange", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showReverser", "show reverser", 0.04, 0.04, 0.56, 0.60, "showReverser", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showClutch", "show clutch value", 0.04, 0.04, 0.56, 0.56, "showClutch", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showRpm", "show RPM", 0.04, 0.04, 0.56, 0.52, "showRpm", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showHandbrake", "show Handbrake", 0.04, 0.04, 0.56, 0.48, "showHandbrake", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showSpeed", "show wanted speed", 0.04, 0.04, 0.56, 0.44, "showSpeed", self.spec_rmtMenu.hud); 
-		self:addCheckBox("showLoad", "show engine load", 0.04, 0.04, 0.56, 0.40, "showLoad", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showHud", "show hud", 0.04, 0.04, 0.56, 0.72, "showHud", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showGear", "show gear", 0.04, 0.04, 0.56, 0.68, "showGear", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showRange", "show range", 0.04, 0.04, 0.56, 0.64, "showRange", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showReverser", "show reverser", 0.04, 0.04, 0.56, 0.60, "showReverser", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showClutch", "show clutch value", 0.04, 0.04, 0.56, 0.56, "showClutch", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showRpm", "show RPM", 0.04, 0.04, 0.56, 0.52, "showRpm", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showHandbrake", "show Handbrake", 0.04, 0.04, 0.56, 0.48, "showHandbrake", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showSpeed", "show wanted speed", 0.04, 0.04, 0.56, 0.44, "showSpeed", self.spec_rmtMenu.hud); 
+		--self:addCheckBox("showLoad", "show engine load", 0.04, 0.04, 0.56, 0.40, "showLoad", self.spec_rmtMenu.hud); 
 
 		--
 		--

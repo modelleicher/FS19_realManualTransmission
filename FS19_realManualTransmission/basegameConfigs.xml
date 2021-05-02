@@ -1,11 +1,9 @@
-<basegameConfigs>
-	
 	<!-- Config file for realManualTransmission configs for basegame vehicles (Note, this only works for basegame vehicles! Not Mods) -->
 	<!-- identification via XML name -->
 	
 	<!-- Changelog -->
 	<!--
-		-- a lot of new configs added by Johny6210, Thank you!! 
+		 a lot of new configs added by Johny6210, Thank you!! 
 	
 		added features in V 0.4.0.4
 		the addition of disableGears and disableRangesSet1 - disableRangesSet3 in each ratio tag in the ranges 
@@ -15,7 +13,7 @@
 	
 	
 	<!-- Sample configuration with all possible values/attributes -->
-																		<!-- configFile is only needed in this XML to identify the basegame vehicle, it is not for the use in Mods! If you want to add a config for a basegame, the name of the XML of that vehicle is what you need to add here -->
+	<!-- configFile is only needed in this XML to identify the basegame vehicle, it is not for the use in Mods! If you want to add a config for a basegame, the name of the XML of that vehicle is what you need to add here -->
 	<realManualTransmission finalRatio="1" switchGearRangeMapping="true" configFile="Beispiel.xml" autoRangeMatching="true" > <!-- finalRatio: speed multiplier for the entire transmission, switchGearRangeMapping: you can change the mapping so you shift the ranges with the gear buttons and gears with the range buttons -->
 		<!-- autoRangeMatching: if this is active, RMT will automatically select the closest range in rangeSet1 when you shift into a new gear. For example John Deere PowerQuad-Plus -->
 		
@@ -30,7 +28,7 @@
 		</gears>
 		<!-- (optional) speedMatchingPercentageUp: if you have autoRangeMatching active, you can set a percentage here of how much higher of a range than default speed it is looking for when shifting into that gear -->
 		<!-- this means in the example above when shifting from Gear 4 into Gear 5 it will look for a range which has a max. speed of 34% above our current speed (default is 0.25)-->
-		<!-- (optional) speedMatchingPercentageDown: same as up, just for downshifting. So in this case if we shift down from 6 to 5 we look for a range that is 20% higher than our current speed. (default is 0)
+		<!-- (optional) speedMatchingPercentageDown: same as up, just for downshifting. So in this case if we shift down from 6 to 5 we look for a range that is 20% higher than our current speed. (default is 0) -->
 		
 		<!-- RangeSets, rangeSets are also optional you don't need any-->
 		<!-- There are up to 3 rangeSets possible -->
@@ -73,9 +71,12 @@
 	</realManualTransmission>	
 	
 	<!-- end sample -->
+
+
 	
 	<!-- start actual -->
-	
+<basegameConfigs>
+
 	<!-- Alpin DLC Bührer 6105 config by IrrSinn-Rainer -->
 	<realManualTransmission configFile="series6105.xml" finalRatio="1" >
 		<gears defaultGear="2" powerShift="false" >
@@ -95,7 +96,7 @@
 	</realManualTransmission>	
 		
 	
- <realManualTransmission configFile="favorit500.xml">
+    <realManualTransmission configFile="favorit500.xml">
 			 
 	<!-- gears configuration. Every transmission needs to have gears. The number of gears is minimum of 2, no maximum -->
 	<gears>

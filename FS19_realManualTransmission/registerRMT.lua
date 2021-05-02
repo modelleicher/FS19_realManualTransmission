@@ -57,9 +57,11 @@ function rmtLoadXMLConfigs:loadMap(n)
 
     print("load map RMT true")
 	g_currentMission.rmtGlobals = {};
-	g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtMenuMain.modDirectory.."basegameConfigs.xml");
+	g_currentMission.rmtGlobals.basegameConfigsXML = loadXMLFile("basegameConfigs", rmtLoadXMLConfigs.modDirectory.."basegameConfigs.xml");
 
-	
+    g_currentMission.rmtMenu = {};
+    g_currentMission.rmtMenu.background = createImageOverlay(rmtLoadXMLConfigs.modDirectory.."overlay/backgroundOverlay.dds");
+
 end;
 
 addModEventListener(rmtLoadXMLConfigs);

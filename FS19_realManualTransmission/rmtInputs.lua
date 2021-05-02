@@ -15,6 +15,10 @@ end;
 
 function rmtInputs:onLoad(savegame)
 	self.addRmtActionEvent = rmtInputs.addRmtActionEvent;
+
+	self.spec_rmtInputs = {};
+	local spec = self.spec_rmtInputs;
+	spec.gearAxisPosition = 0;
 end;
 
 -- actionEvent stuffs.. (this one is called each time the vehicle is entered)
@@ -116,10 +120,16 @@ function rmtInputs:addRmtActionEvent(type, inputAction, func, showHud)
 end;
 
 function rmtInputs:RMT_OPEN_MENU()
-	if self.spec_rmtMenu ~= nil then
-		self.spec_rmtMenu.isOn = not self.spec_rmtMenu.isOn;
-		g_inputBinding:setShowMouseCursor(self.spec_rmtMenu.isOn)
-		self.spec_enterable.cameras[self.spec_enterable.camIndex].isActivated = not self.spec_rmtMenu.isOn;
+	--if self.spec_rmtMenu ~= nil then
+	--	self.spec_rmtMenu.isOn = not self.spec_rmtMenu.isOn;
+	--	g_inputBinding:setShowMouseCursor(self.spec_rmtMenu.isOn)
+	--	self.spec_enterable.cameras[self.spec_enterable.camIndex].isActivated = not self.spec_rmtMenu.isOn;
+	--end;
+
+	local GUI = g_gui:showDialog("rmtMenuMainGui")
+	print("self: "..tostring(self));
+	if GUI ~= nil then
+		GUI.target:loadSettings(self);
 	end;
 end;
 
@@ -273,10 +283,14 @@ function rmtInputs:RMT_GEARSHIFT_AXIS(actionName, inputValue)
 	local spec = self.spec_rmtClassicTransmission;
 	local rmt = self.spec_realManualTransmission;
 
-	local wantedGear = math.floor(spec.numberOfGears * inputValue);
+	local input = self.spec_rmtInputs;
 
-	if wantedGear ~= spec.currentGear then
-		self:processGearInputs(wantedGear, 0);
+	local wantedGear = math.floor(spec.numberOfGears * inputValue);
+	if input.gearAxisPosition ~= wantedGear then
+		if wantedGear ~= spec.currentGear then
+			self:processGearInputs(wantedGear, 0);
+		end;
+		input.gearAxisPosition = wantedGear;		
 	end;
 end;
 

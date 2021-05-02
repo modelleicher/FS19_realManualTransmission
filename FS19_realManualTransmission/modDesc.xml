@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="53">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.6.1.3</version>
+    <version>0.6.1.4</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -72,7 +72,7 @@
     <multiplayer supported="true"/> 
     <extraSourceFiles>
         <sourceFile filename="registerRMT.lua"/>
-        <sourceFile filename="rmtMenuMain.lua"/>
+        <sourceFile filename="rmtMenuMainGui.lua"/>
         <sourceFile filename="rmtOverride.lua"/>
         <sourceFile filename="rmtUtils.lua"/>
         <sourceFile filename="events/processClutchInputEvent.lua"/>
