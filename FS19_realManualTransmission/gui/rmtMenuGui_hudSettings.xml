@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+
+<GUI onOpen="onOpen" onClose="onClose" onCreate="onCreate">
+    <GuiElement type="empty" profile="newLayer" />
+    <GuiElement type="bitmap" profile="dialogFullscreenBg" />
+
+    <GuiElement debugEnabled="false" type="bitmap" profile="dialogBg" size="1200px 700px" id="dialogElement">
+        <GuiElement type="flowLayout" profile="buttonBoxDialog" id="buttonsPC">
+            <GuiElement type="button" profile="buttonOK" text="$l10n_button_confirm" onClick="onClickOk" id="yesButton"/>
+            <GuiElement type="button" profile="buttonBack" text="$l10n_button_back" onClick="onClickBack" id="noButton"/>
+        </GuiElement>
+
+        <!-- showHud -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 600px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showHud" id="button_showHud" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showHud" text="$10n_gui_showHud"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>
+
+        <!-- showGear -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 530px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showGear" id="button_showGear" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showGear" text="$10n_gui_showGear"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>      
+
+        <!-- showRange -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 460px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showRange" id="button_showRange" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showRange" text="$10n_gui_showRange"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement> 
+
+        <!-- showReverser -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 390px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showReverser" id="button_showReverser" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showReverser" text="$10n_gui_showReverser"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>  
+
+        <!-- showClutch -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 320px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showClutch" id="button_showClutch" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showClutch" text="$10n_gui_showClutch"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>   
+
+        <!-- showRpm -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 250px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showRpm" id="button_showRpm" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showRpm" text="$10n_gui_showRpm"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>    
+
+        <!-- showHandbrake -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 180px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showHandbrake" id="button_showHandbrake" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showHandbrake" text="$10n_gui_showHandbrake"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement> 
+
+        <!-- showSpeed -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 110px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showSpeed" id="button_showSpeed" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showSpeed" text="$10n_gui_showSpeed"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>
+
+        <!-- showSpeed -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="-350px 40px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showLoad" id="button_showLoad" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showLoad" text="$10n_gui_showLoad"/-->
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>                                                
+    </GuiElement>
+</GUI>
+

@@ -1,5 +1,7 @@
 -- Changelog:
 
+-- V 0.6.1.5 ###
+	-- more work on the new GUI, not much working yet tho
 -- V 0.6.1.4 ###
 	-- fixed gear shifting axis so it doesn't override everything else unless the axis is moved 
 	-- removed old menu, started on new menu 

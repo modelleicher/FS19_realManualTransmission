@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="53">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.6.1.4</version>
+    <version>0.6.1.5</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -65,14 +65,30 @@
 		<text name="input_RMT_SELECT_GEAR_6"><de>RMT: Gang-Direktwahl 6</de><en>RMT: gear 6</en></text>
 		<text name="input_RMT_SELECT_GEAR_7"><de>RMT: Gang-Direktwahl 7</de><en>RMT: gear 7</en></text>
 		<text name="input_RMT_SELECT_GEAR_8"><de>RMT: Gang-Direktwahl 8</de><en>RMT: gear 8</en></text>
-		
-		
+
+		<text name="gui_on"><de>An</de><en>On</en></text>	
+		<text name="gui_off"><de>Aus</de><en>Off</en></text>			
+		<text name="gui_showHud"><de>Hud</de><en>Hud</en></text>		
+		<text name="gui_showGear"><de>Gang</de><en>Gear</en></text>	
+		<text name="gui_showRange"><de>Gruppen</de><en>Ranges</en></text>	
+		<text name="gui_showReverser"><de>Reverser</de><en>Reverser</en></text>	
+		<text name="gui_showClutch"><de>Kupplung</de><en>Clutch</en></text>	
+		<text name="gui_showRpm"><de>Drehzahl</de><en>RPM</en></text>	
+		<text name="gui_showHandbrake"><de>Handbremse</de><en>Handbrake</en></text>	
+		<text name="gui_showSpeed"><de>Geschwindigkeit</de><en>Speed</en></text>	
+		<text name="gui_showLoad"><de>Last</de><en>Load</en></text>	
+	
 	</l10n>
 	
     <multiplayer supported="true"/> 
     <extraSourceFiles>
         <sourceFile filename="registerRMT.lua"/>
-        <sourceFile filename="rmtMenuMainGui.lua"/>
+
+        <sourceFile filename="gui/rmtMenuGui_main.lua"/>
+        <sourceFile filename="gui/rmtMenuGui_mainSettings.lua"/>
+        <sourceFile filename="gui/rmtMenuGui_hudSettings.lua"/>
+        <sourceFile filename="gui/rmtMenuGui_inputSettings.lua"/>
+
         <sourceFile filename="rmtOverride.lua"/>
         <sourceFile filename="rmtUtils.lua"/>
         <sourceFile filename="events/processClutchInputEvent.lua"/>

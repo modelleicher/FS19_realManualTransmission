@@ -126,9 +126,10 @@ function rmtInputs:RMT_OPEN_MENU()
 	--	self.spec_enterable.cameras[self.spec_enterable.camIndex].isActivated = not self.spec_rmtMenu.isOn;
 	--end;
 
-	local GUI = g_gui:showDialog("rmtMenuMainGui")
-	print("self: "..tostring(self));
+	local GUI = g_gui:showDialog("rmtMenuGui_main")
+	
 	if GUI ~= nil then
+		print("self: "..tostring(self));
 		GUI.target:loadSettings(self);
 	end;
 end;
