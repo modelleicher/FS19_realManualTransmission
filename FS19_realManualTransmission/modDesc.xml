@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="53">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.6.1.5</version>
+    <version>0.6.1.6</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -77,7 +77,8 @@
 		<text name="gui_showHandbrake"><de>Handbremse</de><en>Handbrake</en></text>	
 		<text name="gui_showSpeed"><de>Geschwindigkeit</de><en>Speed</en></text>	
 		<text name="gui_showLoad"><de>Last</de><en>Load</en></text>	
-	
+		<text name="gui_showHudBackground"><de>Hud Hintergrund</de><en>Hud Background</en></text>	
+
 	</l10n>
 	
     <multiplayer supported="true"/> 

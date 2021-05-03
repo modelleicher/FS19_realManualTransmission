@@ -1,5 +1,7 @@
 -- Changelog:
 
+-- V 0.6.1.6 ###
+	-- hud settings menu mostly done
 -- V 0.6.1.5 ###
 	-- more work on the new GUI, not much working yet tho
 -- V 0.6.1.4 ###

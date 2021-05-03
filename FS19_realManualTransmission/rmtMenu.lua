@@ -79,6 +79,7 @@ function rmtMenu:onPostLoad(savegame)
 			hud.showSpeed = Utils.getNoNil(getXMLBool(xmlFile, key1.."#showSpeed"), hud.showSpeed);
 			hud.showLoad = Utils.getNoNil(getXMLBool(xmlFile, key1.."#showLoad"), hud.showLoad);
 			
+			hud.showBackground = Utils.getNoNil(getXMLBool(xmlFile, key1.."#showBackground"), hud.showBackground);
 		end;
 	end;
 end;
@@ -101,7 +102,8 @@ function rmtMenu:saveToXMLFile(xmlFile, key)
 			setXMLBool(xmlFile, key1.."#showHandbrake", hud.showHandbrake);
 			setXMLBool(xmlFile, key1.."#showSpeed", hud.showSpeed);
 			setXMLBool(xmlFile, key1.."#showLoad", hud.showLoad);
-			
+
+			setXMLBool(xmlFile, key1.."#showBackground", hud.showBackground);			
 		end;
 	end;
 end;
@@ -201,7 +203,9 @@ function rmtMenu:onDraw()
 				y = y + addY;
 			end;
 			
-			renderOverlay(g_currentMission.rmtMenu.background, hud.posX, hud.posY, hud.sizeX, y-hud.posY+0.01);
+			if hud.showBackground then
+				renderOverlay(g_currentMission.rmtMenu.background, hud.posX, hud.posY, hud.sizeX, y-hud.posY+0.01);
+			end;
 			
 			if spec.isOn then
 				-- check if the mouse is hovered over the HUD

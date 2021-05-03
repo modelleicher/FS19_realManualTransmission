@@ -89,7 +89,32 @@
             <GuiElement type="text" profile="multiTextOptionSettingsText"/>
             <!--GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showLoad" text="$10n_gui_showLoad"/-->
             <GuiElement type="bitmap" profile="multiTextOptionBg"/>
-        </GuiElement>                                                
+        </GuiElement>    
+
+        <!-- show hud background -->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="25px 440px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_showBackground" id="button_showBackground" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="showBackground" text="Background Show"/>
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>     
+
+        <!-- hud position change buttons-->
+        <GuiElement type="checkedOption" profile="multiTextOption" position="25px 140px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_xPos" id="button_xPos" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="xPos" text="X Pos"/>
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>     
+        <GuiElement type="checkedOption" profile="multiTextOption" position="25px 50px" screenAlign="bottomCenter" positionOrigin="bottomCenter" onClick="onClickButton_yPos" id="button_yPos" >
+            <GuiElement type="button" profile="multiTextOptionLeft" />
+            <GuiElement type="button" profile="multiTextOptionRight" />
+            <GuiElement type="text" profile="multiTextOptionSettingsText"/>
+            <GuiElement type="text" profile="multiTextOptionTitle" position="0px 30px" screenAlign="topCenter" positionOrigin="topCenter" id="yPos" text="Y Pos"/>
+            <GuiElement type="bitmap" profile="multiTextOptionBg"/>
+        </GuiElement>                                                                
     </GuiElement>
 </GUI>
 

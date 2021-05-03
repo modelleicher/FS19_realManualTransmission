@@ -4,9 +4,8 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.1.4 ###
-	-- fixed gear shifting axis so it doesn't override everything else unless the axis is moved 
-	-- removed old menu, started on new menu 
+-- V 0.6.1.6 ###
+	-- hud settings menu mostly done
 
 realManualTransmission = {};
 
@@ -217,6 +216,8 @@ function realManualTransmission:onLoad(savegame)
 		hud.showHandbrake = true;
 		hud.showSpeed = true;
 		hud.showLoad = true;
+
+		hud.showBackground = true;	
 		
 		self.spec_rmtMenu.hud = hud;
 			
