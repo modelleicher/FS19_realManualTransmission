@@ -4,8 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.1.6 ###
-	-- hud settings menu mostly done
+-- V 0.6.1.7 ###
+	-- addition of LOAD_PEDAL Sound Modifier. This Modifier is a 0-1 value, difference between pedal and actual rpm. To add additional load-sound on harsh acceleration (e.g. flooring)
+	-- fixed basegameConfigs.xml
 
 realManualTransmission = {};
 
@@ -27,6 +28,10 @@ function realManualTransmission.registerEventListeners(vehicleType)
 	SpecializationUtil.registerEventListener(vehicleType, "onWriteUpdateStream", realManualTransmission);
 	--SpecializationUtil.registerEventListener(vehicleType, "onReadStream", realManualTransmission);
 	SpecializationUtil.registerEventListener(vehicleType, "onReadUpdateStream", realManualTransmission);
+
+	-- new sound modifier 
+	realManualTransmission.LOAD_PEDAL = g_soundManager:registerModifierType("LOAD_PEDAL", realManualTransmission.loadPedalModifierValue);
+
 end;
 
 function realManualTransmission:onLoad(savegame)
@@ -40,6 +45,7 @@ function realManualTransmission:onLoad(savegame)
 	self.calculateRatio = realManualTransmission.calculateRatio;
 	self.getClutchPercent = realManualTransmission.getClutchPercent;
 	
+	self.loadPedalModifierValue = realManualTransmission.loadPedalModifierValue;
 	--
 	self.hasRMT = false;
 	self.rmtIsOn = false;
@@ -145,6 +151,7 @@ function realManualTransmission:onLoad(savegame)
 		spec.currentWantedSpeed = 0;
 		
 		spec.loadPercentage = 0;
+		spec.loadPercentagePedal = 0;
 		
 		spec.lastRealRpm = 850;
 		spec.isLowBrakingTimer = 400;
@@ -433,6 +440,16 @@ function realManualTransmission:getClutchPercent()
 	return math.min(spec.clutchPercentAuto, spec.clutchPercentManual, spec.clutchPercentFluid, spec.clutchPercentAutomatic);
 end;
 
+-- LOAD_PEDAL sound modifier return value
+function realManualTransmission:loadPedalModifierValue()
+	local spec = self.spec_realManualTransmission;
+	if spec.loadPercentagePedal ~= nil then
+		return spec.loadPercentagePedal;
+	end;
+
+	return 0.0;
+end;
+
 function realManualTransmission:onUpdate(dt) 
 
 	-- debugs...
@@ -514,22 +531,27 @@ function realManualTransmission:onUpdate(dt)
 				local loadPercentageNoPTO = (self.spec_motorized.motor:getMotorAppliedTorque()-self.spec_motorized.motor:getMotorExternalTorque()) / math.max( self.spec_motorized.motor:getMotorAvailableTorque(), 0.0001)
 	
 
+				-- load-rpm-based calculation for modifier
+				local rpm1 = self.spec_motorized.motor.equalizedMotorRpm;
+				local loadPercentagePedal = 0;
+				-- range is between minRpm and maxRpm 
+				local range = motor.maxRpm - motor.minRpm;
+				local rawPercentage = mAxisForward - ((rpm-motor.minRpm) / range);
+				-- if we decelerate we have negative value 
+				if rawPercentage < 0 then 
+					-- have a little load on hard deceleration 
+					loadPercentagePedal = math.abs(rawPercentage*0.2);
+				else
+					-- we want to have max. load at 25% difference already 
+					loadPercentagePedal = math.min(rawPercentage*4, 1);
+				end;
+
+				spec.loadPercentagePedal = loadPercentagePedal;
+
 				-- if we are client, use simplified load percentage calculation 
 				-- TO DO : make this more accurate - done 
 				if not self.isServer then
-					rpm = self.spec_motorized.motor.equalizedMotorRpm;
-					-- range is between minRpm and maxRpm 
-					local range = motor.maxRpm - motor.minRpm;
-					local rawPercentage = mAxisForward - ((rpm-motor.minRpm) / range);
-					-- if we decelerate we have negative value 
-					if rawPercentage < 0 then 
-						-- have a little load on hard deceleration 
-						loadPercentage = math.abs(rawPercentage*0.2);
-					else
-						-- we want to have max. load at 25% difference already 
-						loadPercentage = math.min(rawPercentage * 10, 1);
-					end;
-				
+					loadPercentage = loadPercentagePedal;
 				end;
 			
 				if spec.clutchPercent < 0.6 or spec.neutral or (self.spec_rmtAutomatic ~= nil and self.spec_rmtAutomatic.accelerationOverride ~= nil ) then
