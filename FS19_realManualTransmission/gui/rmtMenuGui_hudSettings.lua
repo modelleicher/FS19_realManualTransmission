@@ -36,14 +36,19 @@ end
 
 function rmtMenuGui_hudSettings:loadSettings(vehicle)
     self.vehicle = vehicle
+
+    -- create hudSettings gui table;
+    self.vehicle.rmt_gt_hudSettings = {}
 end;
 
 function rmtMenuGui_hudSettings:update(dt)
     rmtMenuGui_hudSettings:superClass().update(self, dt)
 
     -- running a first-time-run only in update because onCreate did not have proper access to self for some reason
-    if rmtMenuGui_hudSettings_firstTimeRun == nil then
-        
+    local gt = self.vehicle.rmt_gt_hudSettings;
+
+    if gt.firstTimeRun == nil then
+
         -- set texts -> avaiable selection including l10n text first
         self.button_showHud:setTexts({g_i18n:getText("gui_showHud").." "..g_i18n:getText("gui_on"), g_i18n:getText("gui_showHud").." "..g_i18n:getText("gui_off")})
         self.button_showGear:setTexts({g_i18n:getText("gui_showGear").." "..g_i18n:getText("gui_on"), g_i18n:getText("gui_showGear").." "..g_i18n:getText("gui_off")})
@@ -101,7 +106,7 @@ function rmtMenuGui_hudSettings:update(dt)
             self.button_yPos:setState(2);    
         end;
 
-        rmtMenuGui_hudSettings_firstTimeRun = true
+        gt.firstTimeRun = true
     end
 end
 function rmtMenuGui_hudSettings:onClickButton_xPos(state)

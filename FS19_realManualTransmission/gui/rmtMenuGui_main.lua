@@ -39,7 +39,6 @@ function rmtMenuGui_main:onClick_hudSettings(selection)
     self:close()
 	local GUI = g_gui:showDialog("rmtMenuGui_hudSettings")
 	if GUI ~= nil then
-        print("hm")
 		GUI.target:loadSettings(self.vehicle);
 	end;    
 end;

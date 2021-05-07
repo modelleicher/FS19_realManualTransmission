@@ -51,7 +51,7 @@ function rmtInputs.onRegisterActionEvents(self, isActiveForInput, isActiveForInp
 
 			-- direct gear buttons
 			if self.spec_rmtClassicTransmission.gears ~= nil then
-				local actions = {"RMT_SHIFT_UP", "RMT_SHIFT_DOWN", "RMT_NEUTRAL", "RMT_SELECT_GEAR_1", "RMT_SELECT_GEAR_2", "RMT_SELECT_GEAR_3", "RMT_SELECT_GEAR_4", "RMT_SELECT_GEAR_5", "RMT_SELECT_GEAR_6", "RMT_SELECT_GEAR_7", "RMT_SELECT_GEAR_8"}
+				local actions = {"RMT_SHIFT_UP", "RMT_SHIFT_DOWN", "RMT_NEUTRAL", "RMT_SELECT_GEAR_1", "RMT_SELECT_GEAR_2", "RMT_SELECT_GEAR_3", "RMT_SELECT_GEAR_4", "RMT_SELECT_GEAR_5", "RMT_SELECT_GEAR_6", "RMT_SELECT_GEAR_7", "RMT_SELECT_GEAR_8", "RMT_SELECT_GEAR_9", "RMT_SELECT_GEAR_10"}
 				for i = 1, #actions do
 					self:addRmtActionEvent("BUTTON_DOUBLE_ACTION", actions[i], "UIP_SYNCH_GEARS")
 				end;			
@@ -129,7 +129,6 @@ function rmtInputs:RMT_OPEN_MENU()
 	local GUI = g_gui:showDialog("rmtMenuGui_main")
 	
 	if GUI ~= nil then
-		print("self: "..tostring(self));
 		GUI.target:loadSettings(self);
 	end;
 end;

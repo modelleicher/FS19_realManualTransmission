@@ -4,9 +4,9 @@
 -- release Beta on Github date: 03.02.2019
 
 -- current version and changelog:
--- V 0.6.1.7 ###
-	-- addition of LOAD_PEDAL Sound Modifier. This Modifier is a 0-1 value, difference between pedal and actual rpm. To add additional load-sound on harsh acceleration (e.g. flooring)
-	-- fixed basegameConfigs.xml
+-- V 0.6.1.8 ###
+	-- addition of button for 9th and 10th gear due to request
+	-- fixed hudSettings being "global" for all vehicles bug
 
 realManualTransmission = {};
 

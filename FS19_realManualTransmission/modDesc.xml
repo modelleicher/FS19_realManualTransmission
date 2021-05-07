@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="53">
     <author>modelleicher (LS-Modcompany)</author>
-    <version>0.6.1.7</version>
+    <version>0.6.1.8</version>
     <title>
         <de>Real Manual Transmission</de>
 		<en>Real Manual Transmission</en>
@@ -65,6 +65,8 @@
 		<text name="input_RMT_SELECT_GEAR_6"><de>RMT: Gang-Direktwahl 6</de><en>RMT: gear 6</en></text>
 		<text name="input_RMT_SELECT_GEAR_7"><de>RMT: Gang-Direktwahl 7</de><en>RMT: gear 7</en></text>
 		<text name="input_RMT_SELECT_GEAR_8"><de>RMT: Gang-Direktwahl 8</de><en>RMT: gear 8</en></text>
+		<text name="input_RMT_SELECT_GEAR_9"><de>RMT: Gang-Direktwahl 9</de><en>RMT: gear 9</en></text>
+		<text name="input_RMT_SELECT_GEAR_10"><de>RMT: Gang-Direktwahl 10</de><en>RMT: gear 10</en></text>
 
 		<text name="gui_on"><de>An</de><en>On</en></text>	
 		<text name="gui_off"><de>Aus</de><en>Off</en></text>			
@@ -224,7 +226,13 @@
 		</actionBinding>
 		<actionBinding action="RMT_SELECT_GEAR_8">
 			<binding device="KB_MOUSE_DEFAULT" input="" />
-		</actionBinding>		
+		</actionBinding>
+		<actionBinding action="RMT_SELECT_GEAR_9">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>	
+		<actionBinding action="RMT_SELECT_GEAR_10">
+			<binding device="KB_MOUSE_DEFAULT" input="" />
+		</actionBinding>							
     </inputBinding>	
 	
 	<actions>
@@ -276,6 +284,8 @@
 		<action name="RMT_SELECT_GEAR_6" />
 		<action name="RMT_SELECT_GEAR_7" />
 		<action name="RMT_SELECT_GEAR_8" />
+		<action name="RMT_SELECT_GEAR_9" />
+		<action name="RMT_SELECT_GEAR_10" />
 
 	</actions>
 	
